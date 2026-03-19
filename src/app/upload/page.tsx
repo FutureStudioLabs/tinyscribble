@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { Logo } from "@/components/Logo";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.click();
+  }, []);
 
   const handleClick = () => {
     inputRef.current?.click();
