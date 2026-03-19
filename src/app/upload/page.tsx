@@ -5,10 +5,15 @@ import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { Logo } from "@/components/Logo";
 import { useRef, useEffect } from "react";
 
+let lastAutoOpenTime = 0;
+
 export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const now = Date.now();
+    if (now - lastAutoOpenTime < 500) return; // Prevent double-open (React Strict Mode)
+    lastAutoOpenTime = now;
     inputRef.current?.click();
   }, []);
 
