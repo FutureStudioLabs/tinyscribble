@@ -7,10 +7,16 @@ import { useRef, useEffect } from "react";
 
 let lastAutoOpenTime = 0;
 
+function isMobileDevice() {
+  if (typeof navigator === "undefined") return true; // SSR: skip auto-open
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (isMobileDevice()) return; // Mobile browsers block programmatic file input
     const now = Date.now();
     if (now - lastAutoOpenTime < 500) return; // Prevent double-open (React Strict Mode)
     lastAutoOpenTime = now;
