@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 import { Logo } from "@/components/Logo";
-import { useRef, useEffect } from "react";
+import { setPendingUpload } from "@/lib/upload-store";
+import { useRef, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 let lastAutoOpenTime = 0;
 
@@ -13,7 +16,10 @@ function isMobileDevice() {
 }
 
 export default function UploadPage() {
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isMobileDevice()) return; // Mobile browsers block programmatic file input
@@ -24,15 +30,20 @@ export default function UploadPage() {
   }, []);
 
   const handleClick = () => {
+    setError(null);
     inputRef.current?.click();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // TODO: Navigate to loading screen and start API call
-      // router.push("/loading");
+    if (!file) {
+      e.target.value = "";
+      return;
     }
+    setError(null);
+    setPendingUpload(file);
+    setIsUploading(true);
+    router.replace("/loading");
     e.target.value = "";
   };
 
@@ -65,14 +76,32 @@ export default function UploadPage() {
             className="hidden"
             onChange={handleChange}
           />
+          {error && (
+            <p
+              className="mb-4 text-sm text-red-600"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {error}
+            </p>
+          )}
           <button
             type="button"
             onClick={handleClick}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FF7B5C] text-white font-bold text-base transition-colors hover:bg-[#FF6B4A] active:scale-[0.98]"
+            disabled={isUploading}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FF7B5C] text-white font-bold text-base transition-all duration-200 hover:bg-[#FF6B4A] active:scale-[0.98] disabled:opacity-90"
             style={{ fontFamily: "var(--font-body)" }}
           >
-            Upload Your Drawing
-            <span className="text-lg">↑</span>
+            {isUploading ? (
+              <>
+                <CheckIcon size={24} weight="bold" />
+                Uploading…
+              </>
+            ) : (
+              <>
+                Upload Your Drawing
+                <span className="text-lg">↑</span>
+              </>
+            )}
           </button>
           <p
             className="mt-6 text-center text-[13px] text-[#9B9B9B] max-w-sm mx-auto"

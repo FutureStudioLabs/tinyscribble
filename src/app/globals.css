@@ -31,3 +31,85 @@ body {
   color: var(--color-text);
   font-family: var(--font-body), system-ui, sans-serif;
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes gradient-border {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes gradient-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gradient-spin-reverse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes ai-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 123, 92, 0.4), 0 0 40px rgba(78, 205, 196, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 158, 108, 0.6), 0 0 60px rgba(78, 205, 196, 0.4);
+  }
+}
+
+@keyframes ai-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
