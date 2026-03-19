@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /* Typography */
+  --line-height-title: 1.2;
+  --line-height-description: 1.5;
+
   /* Coral Dream palette */
   --color-primary: #FF7B5C;
   --color-secondary: #FF9E6C;
