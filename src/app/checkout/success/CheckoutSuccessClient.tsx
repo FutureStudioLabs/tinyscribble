@@ -212,7 +212,7 @@ export function CheckoutSuccessClient() {
           )}
         </button>
         <p className="text-xs text-[#9B9B9B]">
-          Sends a secure email link to finish signing in — no password. Use the same email you used in Stripe.
+          We&apos;ll send a 6-digit code to your email to finish signing in — no password.
         </p>
         <p className="text-xs text-[#9B9B9B]">
           <span className="text-[#6B6B6B]">Having trouble? </span>

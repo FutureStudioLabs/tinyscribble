@@ -1,15 +1,25 @@
-# Supabase Auth — TinyScribble (magic link)
+# Supabase Auth — TinyScribble (6-digit OTP)
 
-Aligned with **PROJECT_SCOPE §3.9**: magic link only, no passwords; pre-checkout stays anonymous; Stripe Checkout can still collect email for billing (link accounts in webhook when needed).
+Aligned with **PROJECT_SCOPE §3.9**: passwordless only, no passwords; pre-checkout stays anonymous; Stripe Checkout can still collect email for billing (link accounts in webhook when needed).
 
 ## Dashboard checklist
 
 1. **Authentication → Providers → Email**
    - Enable **Email**.
-   - Turn **off** “Confirm email” for faster dev if you want (production: usually keep confirmations or rely on magic link only).
-   - Disable **password** sign-in if the UI offers it (scope: magic link only).
+   - Turn **off** “Confirm email” for faster dev if you want (production: usually keep confirmations).
+   - Disable **password** sign-in if the UI offers it (scope: OTP only).
 
-2. **Authentication → URL configuration**
+2. **Authentication → Email Templates → Magic Link**
+   - Replace the default template with one that shows the **6-digit code** instead of a link.
+   - Include `{{ .Token }}` in the body so users receive the code:
+   ```html
+   <h2>Your TinyScribble sign-in code</h2>
+   <p>Enter this 6-digit code in the app:</p>
+   <p style="font-size:24px;font-weight:bold;letter-spacing:0.2em;">{{ .Token }}</p>
+   <p>This code expires in 1 hour.</p>
+   ```
+
+3. **Authentication → URL configuration**
    - **Site URL:** e.g. `https://your-domain.com` (prod) or `http://localhost:3000` (dev).
    - **Redirect URLs** (allowlist) — add:
      - `http://localhost:3000/auth/callback`
@@ -17,15 +27,15 @@ Aligned with **PROJECT_SCOPE §3.9**: magic link only, no passwords; pre-checkou
      - `https://your-domain.com/auth/callback`
      - `https://your-domain.com/**` (optional)
 
-3. **Session length (30-day retention, per scope)**  
+4. **Session length (30-day retention, per scope)**  
    Adjust under **Authentication → Settings** (JWT expiry, refresh token rotation). Longer-lived refresh sessions approximate “30-day retention”; tune to product/legal needs.
 
 ## App routes
 
 | Route | Role |
 |-------|------|
-| `/login` | Collect email → `signInWithOtp` (magic link). **If already signed in**, server redirects to `next` or **`/dashboard`** (no more “logged in but still on login”). Use **`/login?switch_account=1`** to sign out and use another email. |
-| `/auth/callback` | PKCE `exchangeCodeForSession` → sets cookies → redirect `next` or `/`. |
+| `/login` | Collect email → `signInWithOtp` (sends 6-digit code) → user enters code → `verifyOtp`. **If already signed in**, server redirects to `next` or **`/dashboard`** (no more “logged in but still on login”). Use **`/login?switch_account=1`** to sign out and use another email. |
+| `/auth/callback` | Legacy: PKCE `exchangeCodeForSession` for old magic links (if template still sends links). Not used for OTP flow. |
 
 ## Env (see `.env.example`)
 
@@ -43,8 +53,8 @@ Aligned with **PROJECT_SCOPE §3.9**: magic link only, no passwords; pre-checkou
 
 1. **Success URL** → `/checkout/success?session_id={CHECKOUT_SESSION_ID}` (set in `POST /api/stripe/checkout`).
 2. **Success page** explains that the user must use the **same email as Stripe** to sign in, and offers:
-   - **Continue & sign in** → `GET /api/auth/complete-checkout?session_id=…` → verifies Stripe session → `auth.admin.generateLink({ type: 'magiclink' })` → redirect to one-click magic link → `/auth/callback?next=/generate`.
-   - **Go to login** → `/login?next=/generate&email=…` for a normal magic link.
+   - **Continue** → `GET /api/auth/complete-checkout?session_id=…` → verifies Stripe session, syncs billing → redirects to `/login?next=/generate&email=…&auto_send=1` (code is sent automatically; user enters 6-digit code).
+   - **Go to login** → `/login?next=/generate&email=…` for manual sign-in.
 3. **Webhooks** (Stripe Dashboard → Developers → Webhooks → your endpoint) — enable at least:
    - `checkout.session.completed` — upsert into **`billing_customers`**
    - **`customer.subscription.created`** and **`customer.subscription.updated`** — keeps **`status`** in sync (e.g. `incomplete` → **`trialing`**). Without these, trial users can look “unpaid” until something else updates the row.
