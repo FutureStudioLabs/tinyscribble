@@ -1,3 +1,4 @@
+import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
 import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { createClient } from "@/lib/supabase/server";
@@ -7,7 +8,7 @@ export type BillingEntitlementResponse = BillingEntitlementPayload;
 
 /**
  * Whether the current session may use subscription-gated features (e.g. video).
- * Uses RLS: `billing_customers` row must match `auth.jwt() ->> 'email'`.
+ * Reads `billing_customers` with the user session (RLS): own row via `auth_user_id` or email.
  */
 export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email) {
+  if (!user?.id) {
     return NextResponse.json({
       authenticated: false,
       entitled: false,
@@ -23,13 +24,13 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
     });
   }
 
-  const { data, error } = await supabase
-    .from("billing_customers")
-    .select("status")
-    .maybeSingle();
+  const { status, errorMessage } = await fetchBillingCustomerStatusForUser(
+    supabase,
+    user
+  );
 
-  if (error) {
-    console.error("billing entitlement select", error);
+  if (errorMessage) {
+    console.error("billing entitlement select", errorMessage);
     return NextResponse.json({
       authenticated: true,
       entitled: false,
@@ -37,7 +38,6 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
     });
   }
 
-  const status = data?.status ?? null;
   return NextResponse.json({
     authenticated: true,
     entitled: isSubscriptionEntitled(status),

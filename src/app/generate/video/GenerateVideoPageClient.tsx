@@ -25,6 +25,8 @@ function videoCacheKey(cgiKey: string) {
 
 type VideoPhase = "idle" | "starting" | "polling" | "complete" | "error";
 
+type BootstrapStep = "entitlement" | "funnel";
+
 export function GenerateVideoPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,6 +35,8 @@ export function GenerateVideoPageClient() {
   const [baseReady, setBaseReady] = useState(false);
   const [cgiKey, setCgiKey] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [bootstrapStep, setBootstrapStep] = useState<BootstrapStep | null>("entitlement");
+  const [bootStalled, setBootStalled] = useState(false);
 
   const [videoPhase, setVideoPhase] = useState<VideoPhase>("idle");
   const [progress, setProgress] = useState(0);
@@ -43,6 +47,13 @@ export function GenerateVideoPageClient() {
   const pollAbortRef = useRef(false);
   const postInFlightRef = useRef(false);
 
+  /** If bootstrap takes too long, offer escape hatch (blocked fetch, lost sessionStorage, etc.) */
+  useEffect(() => {
+    if (baseReady) return;
+    const t = window.setTimeout(() => setBootStalled(true), 42_000);
+    return () => window.clearTimeout(t);
+  }, [baseReady]);
+
   /** Entitlement + funnel state */
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +63,21 @@ export function GenerateVideoPageClient() {
       return (await entRes.json()) as BillingEntitlementPayload;
     }
 
+    function goPaywall() {
+      const next = `/generate/video?v=${variant}`;
+      window.location.assign(`/paywall?next=${encodeURIComponent(next)}`);
+    }
+
+    function goUpload() {
+      window.location.assign("/upload");
+    }
+
+    function goGenerate() {
+      window.location.assign("/generate");
+    }
+
     void (async () => {
+      setBootstrapStep("entitlement");
       let ent = await fetchEntitlement();
       if (cancelled) return;
 
@@ -71,28 +96,29 @@ export function GenerateVideoPageClient() {
 
       if (cancelled) return;
       if (!ent.entitled) {
-        router.replace(
-          `/paywall?next=${encodeURIComponent(`/generate/video?v=${variant}`)}`
-        );
+        goPaywall();
         return;
       }
 
+      setBootstrapStep("funnel");
+
       const pending = getPendingUpload() ?? getRestoredUploadState();
       if (!pending?.r2Key || !pending.previewUrl) {
-        router.replace("/upload");
+        goUpload();
         return;
       }
 
       const keys = getGeneratedVariantKeys(pending.r2Key);
       const ck = keys?.[variant];
       if (!ck) {
-        router.replace("/generate");
+        goGenerate();
         return;
       }
 
       if (!cancelled) {
         setPreviewUrl(pending.previewUrl);
         setCgiKey(ck);
+        setBootstrapStep(null);
         setBaseReady(true);
       }
     })();
@@ -100,7 +126,7 @@ export function GenerateVideoPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [router, variant]);
+  }, [variant]);
 
   const startVideoGeneration = useCallback(async (cgi: string) => {
     if (postInFlightRef.current) return;
@@ -271,17 +297,75 @@ export function GenerateVideoPageClient() {
   }
 
   if (!baseReady || !cgiKey || !previewUrl) {
+    const bootTitle =
+      bootstrapStep === "funnel"
+        ? "Loading your artwork"
+        : "Checking your plan";
+    const bootBody =
+      bootstrapStep === "funnel"
+        ? "We’re pulling in your drawing and the CGI versions from this session. If you opened this link in a new device or private window, start again from Upload."
+        : "Making sure your subscription is active. Right after checkout this can take a few seconds while Stripe and your account sync.";
+
     return (
-      <div className="flex h-[100vh] min-h-[100vh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
-        <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
+      <div className="flex min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] via-[#FFFAF7] to-[#FFE8E0]">
+        <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
           <Logo />
           <HeaderUserAvatar />
         </header>
-        <main className="flex min-h-0 flex-1 flex-col px-5">
-          <div className="flex flex-1 flex-col items-center justify-center w-full text-center">
-            <p className="text-sm text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
-              Almost there…
-            </p>
+        <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div
+            className="w-full max-w-[min(100%,22rem)] rounded-[1.35rem] border border-white/90 bg-white/95 px-7 py-10 text-center shadow-[0_20px_50px_-18px_rgba(255,123,92,0.25),0_0_0_1px_rgba(255,123,92,0.06)] backdrop-blur-sm"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            <div
+              className="mx-auto mb-6 flex h-[4.5rem] w-[4.5rem] items-center justify-center [&_svg]:max-h-[3.25rem]"
+              aria-hidden
+            >
+              <SketchMagicLoader />
+            </div>
+            <h1
+              className="mb-3 text-[1.35rem] font-bold leading-tight tracking-tight text-[#1A1A1A] sm:text-2xl"
+              style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
+            >
+              {bootTitle}
+            </h1>
+            <p className="text-sm leading-relaxed text-[#6B6B6B]">{bootBody}</p>
+            <div
+              className="mx-auto mt-8 h-1 max-w-[7rem] overflow-hidden rounded-full bg-[#FF7B5C]/15"
+              aria-hidden
+            >
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[#FF7B5C]/40 to-[#FF9E6C]/60" />
+            </div>
+            {bootStalled ? (
+              <div className="mt-8 space-y-3 border-t border-[#E8E8E8] pt-8">
+                <p className="text-xs font-medium text-[#9B9B9B] uppercase tracking-wider">
+                  Taking too long?
+                </p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.location.assign("/upload")}
+                    className="w-full rounded-full bg-[#FF7B5C] py-3 text-sm font-semibold text-white shadow-md shadow-[#FF7B5C]/25 transition hover:bg-[#FF6B4A]"
+                  >
+                    Start from upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.location.assign("/generate")}
+                    className="w-full rounded-full border border-[#E8E8E8] bg-white py-3 text-sm font-semibold text-[#1A1A1A] transition hover:bg-[#FFF8F5]"
+                  >
+                    Pick a CGI version
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.location.assign("/dashboard/upload")}
+                    className="text-sm font-semibold text-[#6B6B6B] underline underline-offset-2 hover:text-[#1A1A1A]"
+                  >
+                    Dashboard upload
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </main>
       </div>

@@ -3,6 +3,7 @@ import {
   getVeoVideoStatus,
   submitVeoVideoJob,
 } from "@/lib/apiyi-video";
+import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
 import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
 import { getObjectBuffer, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
@@ -15,13 +16,13 @@ async function userIsEntitled(): Promise<boolean> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user?.email) return false;
-  const { data, error } = await supabase
-    .from("billing_customers")
-    .select("status")
-    .maybeSingle();
-  if (error) return false;
-  return isSubscriptionEntitled(data?.status);
+  if (!user?.id) return false;
+  const { status, errorMessage } = await fetchBillingCustomerStatusForUser(
+    supabase,
+    user
+  );
+  if (errorMessage) return false;
+  return isSubscriptionEntitled(status);
 }
 
 function isGeneratedKey(key: string): boolean {
