@@ -83,5 +83,9 @@ export async function getObjectBuffer(key: string): Promise<{
 
 /** Allowed key prefixes for /api/media proxy */
 export function isAllowedMediaKey(key: string): boolean {
-  return key.startsWith("uploads/") || key.startsWith("generated/");
+  return (
+    key.startsWith("uploads/") ||
+    key.startsWith("generated/") ||
+    key.startsWith("videos/")
+  );
 }

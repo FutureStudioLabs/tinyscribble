@@ -12,6 +12,11 @@ interface BeforeAfterSliderProps {
   autoReveal?: boolean;
   /** Use for blob: URLs or when Next/Image remote config is not needed */
   unoptimized?: boolean;
+  /**
+   * Outputs are 9:16 portrait — default shows full frame (letterbox if needed).
+   * Use "cover" only if you want edge-to-edge crop.
+   */
+  objectFit?: "contain" | "cover";
 }
 
 export function BeforeAfterSlider({
@@ -21,6 +26,7 @@ export function BeforeAfterSlider({
   afterAlt = "AI-generated CGI result",
   autoReveal = true,
   unoptimized = false,
+  objectFit = "contain",
 }: BeforeAfterSliderProps) {
   const [position, setPosition] = useState(100); // Start with full "after" (right side)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,10 +86,12 @@ export function BeforeAfterSlider({
     requestAnimationFrame(animate);
   }, [autoReveal]);
 
+  const fitClass = objectFit === "cover" ? "object-cover" : "object-contain";
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-[3/4] min-h-[320px] rounded-2xl overflow-hidden select-none touch-none"
+      className="relative mx-auto w-full max-w-[min(100%,calc(85dvh*9/16))] aspect-[9/16] min-h-[200px] rounded-2xl overflow-hidden bg-[#1a1a1a]/[0.06] select-none touch-none"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -98,8 +106,8 @@ export function BeforeAfterSlider({
           src={beforeSrc}
           alt={beforeAlt}
           fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 600px"
+          className={fitClass}
+          sizes="(max-width: 768px) 100vw, 480px"
           priority
           unoptimized={unoptimized}
         />
@@ -114,8 +122,8 @@ export function BeforeAfterSlider({
           src={afterSrc}
           alt={afterAlt}
           fill
-          className="object-cover object-[left_top]"
-          sizes="(max-width: 768px) 100vw, 600px"
+          className={`${fitClass} object-left object-top`}
+          sizes="(max-width: 768px) 100vw, 480px"
           priority
           unoptimized={unoptimized}
         />

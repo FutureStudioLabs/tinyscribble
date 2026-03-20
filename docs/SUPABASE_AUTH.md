@@ -30,6 +30,12 @@ Aligned with **PROJECT_SCOPE §3.9**: passwordless only, no passwords; pre-check
 4. **Session length (30-day retention, per scope)**  
    Adjust under **Authentication → Settings** (JWT expiry, refresh token rotation). Longer-lived refresh sessions approximate “30-day retention”; tune to product/legal needs.
 
+5. **Rate limits (OTP / email)**  
+   If users see "Too many codes sent", adjust under **Authentication → Rate Limits**:
+   - **OTP requests per hour** — project-wide limit (default can be low)
+   - **OTP period** — minimum seconds between codes for the same email  
+   For production, use a **custom SMTP provider** (Brevo, SendGrid, etc.) to avoid built-in email limits.
+
 ## App routes
 
 | Route | Role |

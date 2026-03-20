@@ -47,10 +47,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // Email magic links are often opened in a new tab (e.g. Gmail). Session cookies are set on this
-  // response; send users to a "close this tab" screen instead of deep-linking (avoids losing
-  // in-memory funnel state). Other tabs get a BroadcastChannel ping + router.refresh() from layout.
-  const verified = new URL("/auth/email-verified", origin);
-  verified.searchParams.set("next", next);
-  return NextResponse.redirect(verified.toString());
+  // Redirect to destination. Session cookies are set on this response.
+  const dest = next !== "/" ? next : "/dashboard";
+  return NextResponse.redirect(`${origin}${dest}`);
 }

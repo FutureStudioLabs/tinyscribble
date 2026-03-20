@@ -88,7 +88,13 @@ export function LoginForm() {
       });
 
       if (signError) {
-        setError(signError.message);
+        const msg = signError.message.toLowerCase();
+        setError(
+          msg.includes("rate limit") || msg.includes("too many")
+            ? "Too many codes sent. Please wait a few minutes and try again, or enter the code we already sent."
+            : signError.message
+        );
+        setStep("code");
         setLoading(false);
         return;
       }
@@ -124,7 +130,14 @@ export function LoginForm() {
         })
         .then(({ error: signError }) => {
           if (signError) {
-            setError(signError.message);
+            const msg = signError.message.toLowerCase();
+            setError(
+              msg.includes("rate limit") || msg.includes("too many")
+                ? "Too many codes sent. Please wait a few minutes and try again, or enter the code we already sent."
+                : signError.message
+            );
+            setStep("code");
+            setTimeout(() => codeInputRef.current?.focus(), 100);
           } else {
             setStep("code");
             setMessage("Check your email — we sent you a 6-digit code.");
@@ -157,13 +170,28 @@ export function LoginForm() {
       });
 
       if (verifyError) {
+        // Try OTP bypass (dev/testing) when normal verify fails
+        const bypassRes = await fetch("/api/auth/bypass", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            code: token,
+            next: dest,
+          }),
+        });
+        const bypassData = (await bypassRes.json()) as { redirectUrl?: string; error?: string };
+        if (bypassRes.ok && bypassData.redirectUrl) {
+          window.location.href = bypassData.redirectUrl;
+          return;
+        }
         setError(verifyError.message);
         setLoading(false);
         return;
       }
 
-      router.refresh();
-      router.push(dest);
+      // Full page navigation so server sees the new session cookies
+      window.location.href = dest;
     } catch {
       setError("Something went wrong. Try again.");
       setLoading(false);

@@ -17,7 +17,7 @@ import { openStripeBillingPortal } from "@/lib/open-stripe-billing-portal-client
 import { createClient } from "@/lib/supabase/client";
 import { startStripeCheckout } from "@/lib/start-stripe-checkout-client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -42,6 +42,8 @@ const COPY = {
 
 export function TrialPaywallScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("next") ?? "";
   const mainRef = useRef<HTMLElement | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -100,10 +102,10 @@ export function TrialPaywallScreen() {
         plan === "monthly" ? "starter_monthly" : "starter_annual";
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      await startStripeCheckout(
-        product,
-        user?.id ? { supabaseUserId: user.id } : undefined
-      );
+      await startStripeCheckout(product, {
+        ...(user?.id ? { supabaseUserId: user.id } : {}),
+        ...(returnTo.startsWith("/") ? { returnTo } : {}),
+      });
     } catch (e) {
       const message =
         e instanceof Error ? e.message : "Something went wrong. Try again.";

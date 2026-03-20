@@ -59,7 +59,7 @@ export function DashboardUploadClient() {
               Turn a drawing into magic
             </h2>
             <p
-              className="mb-6 text-sm leading-relaxed text-[#6B6B6B]"
+              className="mb-4 text-sm leading-relaxed text-[#6B6B6B]"
               style={{ fontFamily: "var(--font-body)" }}
             >
               Choose a photo of your child&apos;s art. We&apos;ll take it from there — same steps as
@@ -84,43 +84,40 @@ export function DashboardUploadClient() {
                 <SupportContact errorSummary={error} />
               </div>
             )}
+            <FunnelPrimaryButton
+              onClick={handleClick}
+              disabled={isUploading}
+              className="mb-3 w-full disabled:!opacity-90"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {isUploading ? (
+                <>
+                  <CheckIcon size={24} weight="bold" />
+                  Starting…
+                </>
+              ) : (
+                <>
+                  Choose drawing
+                  <span className="text-lg">↑</span>
+                </>
+              )}
+            </FunnelPrimaryButton>
+            <p
+              className="mx-auto max-w-sm text-center text-[13px] text-[#9B9B9B]"
+              style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
+            >
+              JPEG, PNG, HEIC, or WebP. By uploading you agree to our{" "}
+              <Link href="/terms" className="underline hover:text-[#6B6B6B]">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </div>
         </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-md shrink-0 space-y-4 pb-2 pt-2">
-        <FunnelPrimaryButton
-          onClick={handleClick}
-          disabled={isUploading}
-          className="disabled:!opacity-90"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          {isUploading ? (
-            <>
-              <CheckIcon size={24} weight="bold" />
-              Starting…
-            </>
-          ) : (
-            <>
-              Choose drawing
-              <span className="text-lg">↑</span>
-            </>
-          )}
-        </FunnelPrimaryButton>
-        <p
-          className="mx-auto max-w-sm text-center text-[13px] text-[#9B9B9B]"
-          style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
-        >
-          JPEG, PNG, HEIC, or WebP. By uploading you agree to our{" "}
-          <Link href="/terms" className="underline hover:text-[#6B6B6B]">
-            Terms
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
-            Privacy Policy
-          </Link>
-          .
-        </p>
       </div>
     </div>
   );

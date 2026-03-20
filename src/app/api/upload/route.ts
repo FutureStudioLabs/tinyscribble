@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server";
 import { getR2Client, R2_BUCKET_NAME } from "@/lib/r2-server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
@@ -29,9 +30,9 @@ export async function POST(request: NextRequest) {
     const key = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const client = getR2Client();
+    const r2Client = getR2Client();
 
-    await client.send(
+    await r2Client.send(
       new PutObjectCommand({
         Bucket: R2_BUCKET_NAME!,
         Key: key,
@@ -39,6 +40,18 @@ export async function POST(request: NextRequest) {
         ContentType: file.type || "application/octet-stream",
       })
     );
+
+    // If user is authenticated, add to gallery
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.id) {
+      await supabase.from("gallery_items").insert({
+        user_id: user.id,
+        r2_key: key,
+      });
+    }
 
     return NextResponse.json({
       key,

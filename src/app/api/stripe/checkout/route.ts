@@ -22,9 +22,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { product, supabaseUserId: rawUserId } = body as {
+  const { product, supabaseUserId: rawUserId, returnTo: rawReturnTo } = body as {
     product?: unknown;
     supabaseUserId?: unknown;
+    returnTo?: unknown;
   };
 
   if (!isStripeCheckoutProduct(product)) {
@@ -56,11 +57,19 @@ export async function POST(request: NextRequest) {
   const cancelPath =
     product === "starter_exit_annual" ? "/paywall/exit" : "/paywall";
 
+  const returnTo =
+    typeof rawReturnTo === "string" && rawReturnTo.startsWith("/")
+      ? rawReturnTo
+      : "";
+
   const metadata: Record<string, string> = {
     product,
   };
   if (supabaseUserId) {
     metadata.supabase_user_id = supabaseUserId;
+  }
+  if (returnTo) {
+    metadata.return_to = returnTo;
   }
 
   try {

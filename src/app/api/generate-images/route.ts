@@ -1,5 +1,6 @@
 import { generateNanoBananaImage } from "@/lib/apiyi-image";
 import { getPresignedGetUrl, putObjectBuffer } from "@/lib/r2-server";
+import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
@@ -29,6 +30,11 @@ export async function POST(request: NextRequest) {
 
       try {
         push({ type: "progress", percent: 2 });
+        const supabase = await createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
         const drawingUrl = await getPresignedGetUrl(r2Key, 3600);
         push({ type: "progress", percent: 8 });
 
@@ -68,6 +74,13 @@ export async function POST(request: NextRequest) {
           putObjectBuffer(keys[1], buf2, "image/png"),
           putObjectBuffer(keys[2], buf3, "image/png"),
         ]);
+
+        if (user?.id) {
+          const { error: galleryErr } = await supabase.from("gallery_items").insert(
+            keys.map((k) => ({ user_id: user.id, r2_key: k }))
+          );
+          if (galleryErr) console.error("gallery_items insert (images)", galleryErr);
+        }
 
         push({ type: "progress", percent: 94 });
         push({ type: "complete", keys: [...keys] });

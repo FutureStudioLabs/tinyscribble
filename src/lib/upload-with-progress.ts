@@ -10,6 +10,7 @@ export function uploadFormDataWithProgress(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
+    xhr.withCredentials = true;
     xhr.responseType = "json";
 
     xhr.upload.onprogress = (e) => {

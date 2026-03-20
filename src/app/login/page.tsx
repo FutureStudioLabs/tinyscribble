@@ -13,7 +13,7 @@ import { Suspense } from "react";
 
 export const metadata = {
   title: "Log in — TinyScribble",
-  description: "Sign in with a magic link — no password.",
+  description: "Sign in with a 6-digit code — no password.",
 };
 
 type Search = { next?: string; switch_account?: string };
@@ -74,7 +74,7 @@ export default async function LoginPage({
                 or continue to your dashboard.
               </>
             ) : (
-              <>Enter your email and we&apos;ll send you a magic link. No password.</>
+              <>Enter your email and we&apos;ll send you a 6-digit code. No password.</>
             )}
           </p>
           {isSwitchAccountFlow ? (

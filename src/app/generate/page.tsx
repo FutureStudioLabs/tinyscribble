@@ -17,7 +17,7 @@ import {
   saveGeneratedVariantKeys,
 } from "@/lib/generated-variants-cache";
 import { streamGenerateImages } from "@/lib/stream-generate-images";
-import { getPendingUpload } from "@/lib/upload-store";
+import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -36,7 +36,10 @@ function mediaUrl(key: string) {
 
 export default function GeneratePage() {
   const router = useRouter();
-  const upload = typeof window !== "undefined" ? getPendingUpload() : null;
+  const upload =
+    typeof window !== "undefined"
+      ? getPendingUpload() ?? getRestoredUploadState()
+      : null;
   const [status, setStatus] = useState<Status>("generating");
   const [messageIndex, setMessageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +59,7 @@ export default function GeneratePage() {
   }, [upload, router]);
 
   const runGeneration = useCallback(async () => {
-    const pending = getPendingUpload();
+    const pending = getPendingUpload() ?? getRestoredUploadState();
     if (!pending?.r2Key) {
       setError("No uploaded drawing found. Go back and upload again.");
       setStatus("error");

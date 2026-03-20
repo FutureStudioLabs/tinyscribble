@@ -118,7 +118,7 @@ export default function LoadingPage() {
 
             {/* Drawing preview card with thin animated gradient border */}
             <div
-              className="relative mx-auto mb-6 w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] rounded-[24px] overflow-hidden"
+              className="relative mx-auto mb-6 w-full max-w-[min(100%,calc(85dvh*9/16))] aspect-[9/16] rounded-[24px] overflow-hidden"
               style={{
                 animation: "scale-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards, ai-glow 2.5s ease-in-out infinite",
                 opacity: 0,
@@ -139,7 +139,7 @@ export default function LoadingPage() {
                     <img
                       src={upload.previewUrl}
                       alt="Your drawing"
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-contain bg-[#FFF8F5]"
                     />
                   )}
                 </div>

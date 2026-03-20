@@ -7,7 +7,7 @@ import type { StripeCheckoutProduct } from "@/lib/stripe-checkout";
  */
 export async function startStripeCheckout(
   product: StripeCheckoutProduct,
-  options?: { supabaseUserId?: string }
+  options?: { supabaseUserId?: string; returnTo?: string }
 ): Promise<void> {
   const res = await fetch("/api/stripe/checkout", {
     method: "POST",
@@ -17,6 +17,7 @@ export async function startStripeCheckout(
       ...(options?.supabaseUserId
         ? { supabaseUserId: options.supabaseUserId }
         : {}),
+      ...(options?.returnTo ? { returnTo: options.returnTo } : {}),
     }),
   });
 

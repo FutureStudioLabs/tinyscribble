@@ -4,16 +4,19 @@ type ChatCompletionResponse = {
   choices?: Array<{ message?: { content?: string | null } }>;
 };
 
+/** Default image model — brief: use nano-banana only (not nano-banana-2 / pro). */
+export const APIYI_DEFAULT_IMAGE_MODEL = "nano-banana";
+
 /**
- * Calls APIYI nano-banana with a publicly reachable image URL (e.g. presigned R2 GET).
- * Returns decoded PNG/JPEG bytes.
+ * Calls APIYI chat completions with **nano-banana** (or APIYI_IMAGE_MODEL if set).
+ * Expect a publicly reachable image URL (e.g. presigned R2 GET). Returns decoded PNG/JPEG bytes.
  */
 export async function generateNanoBananaImage(
   drawingImageUrl: string
 ): Promise<Buffer> {
   const apiKey = process.env.APIYI_API_KEY;
   const base = process.env.APIYI_BASE_URL || "https://api.apiyi.com";
-  const model = process.env.APIYI_IMAGE_MODEL || "nano-banana";
+  const model = process.env.APIYI_IMAGE_MODEL?.trim() || APIYI_DEFAULT_IMAGE_MODEL;
   if (!apiKey) {
     throw new Error("Missing APIYI_API_KEY");
   }

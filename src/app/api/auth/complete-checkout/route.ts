@@ -43,8 +43,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/login?error=no_checkout_email`);
     }
 
+    const returnTo =
+      (session.metadata as Record<string, string> | null)?.return_to?.trim() ||
+      "";
+    const nextPath =
+      returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/generate";
+
     const loginUrl = new URL("/login", origin);
-    loginUrl.searchParams.set("next", "/generate");
+    loginUrl.searchParams.set("next", nextPath);
     loginUrl.searchParams.set("email", email);
     loginUrl.searchParams.set("auto_send", "1");
     return NextResponse.redirect(loginUrl.toString());
