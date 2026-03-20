@@ -47,9 +47,28 @@ export function GenerateVideoPageClient() {
   useEffect(() => {
     let cancelled = false;
 
-    void (async () => {
+    async function fetchEntitlement(): Promise<BillingEntitlementPayload> {
       const entRes = await fetch("/api/billing/entitlement", { credentials: "include" });
-      const ent = (await entRes.json()) as Partial<BillingEntitlementPayload>;
+      return (await entRes.json()) as BillingEntitlementPayload;
+    }
+
+    void (async () => {
+      let ent = await fetchEntitlement();
+      if (cancelled) return;
+
+      // After checkout + OTP, `billing_customers` may lag Stripe/webhooks briefly — don't
+      // bounce paying users back to /paywall on the first false negative.
+      if (!ent.entitled && ent.authenticated) {
+        const maxAttempts = 24;
+        const delayMs = 1500;
+        for (let i = 0; i < maxAttempts && !cancelled; i++) {
+          await new Promise((r) => setTimeout(r, delayMs));
+          ent = await fetchEntitlement();
+          if (cancelled) return;
+          if (ent.entitled) break;
+        }
+      }
+
       if (cancelled) return;
       if (!ent.entitled) {
         router.replace(
