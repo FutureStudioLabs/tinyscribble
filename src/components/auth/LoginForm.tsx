@@ -5,7 +5,6 @@ import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { resolvePostLoginDestination } from "@/lib/safe-next-path";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Human-readable copy for `?error=` codes from auth/checkout redirects. */
@@ -34,8 +33,9 @@ function messageFromLoginErrorParam(raw: string | null): string | null {
   return trimmed;
 }
 
+const LOGIN_OTP_RESEND_COOLDOWN_SEC = 45;
+
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next");
   const errorParam = searchParams.get("error");
@@ -47,13 +47,22 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(() =>
     messageFromLoginErrorParam(errorParam)
   );
   const codeInputRef = useRef<HTMLInputElement>(null);
+  const verifyInFlightRef = useRef(false);
 
   const dest = resolvePostLoginDestination(nextPath ?? undefined);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = window.setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [resendCooldown]);
 
   useEffect(() => {
     setError(messageFromLoginErrorParam(errorParam));
@@ -102,6 +111,7 @@ export function LoginForm() {
       setStep("code");
       setMessage("Check your email — we sent you a 6-digit code.");
       setCode("");
+      setResendCooldown(LOGIN_OTP_RESEND_COOLDOWN_SEC);
       setLoading(false);
       setTimeout(() => codeInputRef.current?.focus(), 100);
     } catch {
@@ -109,6 +119,37 @@ export function LoginForm() {
       setLoading(false);
     }
   }, [email]);
+
+  const resendOtp = useCallback(async () => {
+    if (resendCooldown > 0 || resendLoading || !email.trim()) return;
+    setError(null);
+    setResendLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: signError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { shouldCreateUser: true },
+      });
+      if (signError) {
+        const msg = signError.message.toLowerCase();
+        setError(
+          msg.includes("rate limit") || msg.includes("too many")
+            ? "Too many codes sent. Please wait a few minutes and try again, or enter the code we already sent."
+            : signError.message
+        );
+        setResendLoading(false);
+        return;
+      }
+      setMessage("We sent a new code — check your email.");
+      setCode("");
+      setResendCooldown(LOGIN_OTP_RESEND_COOLDOWN_SEC);
+      setTimeout(() => codeInputRef.current?.focus(), 100);
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setResendLoading(false);
+    }
+  }, [email, resendCooldown, resendLoading]);
 
   const hasAutoSent = useRef(false);
   useEffect(() => {
@@ -141,6 +182,7 @@ export function LoginForm() {
           } else {
             setStep("code");
             setMessage("Check your email — we sent you a 6-digit code.");
+            setResendCooldown(LOGIN_OTP_RESEND_COOLDOWN_SEC);
             setTimeout(() => codeInputRef.current?.focus(), 100);
           }
         })
@@ -149,18 +191,13 @@ export function LoginForm() {
     }
   }, [autoSendParam, emailParam]);
 
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
+  const verifyOtp = useCallback(async () => {
+    const token = code.replace(/\D/g, "").slice(0, 6);
+    if (token.length !== 6) return;
+    if (verifyInFlightRef.current) return;
+    verifyInFlightRef.current = true;
     setError(null);
     setLoading(true);
-
-    const token = code.replace(/\D/g, "").slice(0, 6);
-    if (token.length !== 6) {
-      setError("Please enter a 6-digit code.");
-      setLoading(false);
-      return;
-    }
-
     try {
       const supabase = createClient();
       const { error: verifyError } = await supabase.auth.verifyOtp({
@@ -168,9 +205,7 @@ export function LoginForm() {
         token,
         type: "email",
       });
-
       if (verifyError) {
-        // Try OTP bypass (dev/testing) when normal verify fails
         const bypassRes = await fetch("/api/auth/bypass", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -189,21 +224,34 @@ export function LoginForm() {
         setLoading(false);
         return;
       }
-
-      // Full page navigation so server sees the new session cookies
       window.location.href = dest;
     } catch {
       setError("Something went wrong. Try again.");
       setLoading(false);
+    } finally {
+      verifyInFlightRef.current = false;
     }
-  }
+  }, [code, email, dest]);
+
+  useEffect(() => {
+    if (step !== "code") return;
+    if (code.replace(/\D/g, "").length !== 6) return;
+    void verifyOtp();
+  }, [step, code, verifyOtp]);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (step === "email") void sendCode();
-        else void handleVerify(e);
+        else {
+          const token = code.replace(/\D/g, "").slice(0, 6);
+          if (token.length !== 6) {
+            setError("Please enter a 6-digit code.");
+            return;
+          }
+          void verifyOtp();
+        }
       }}
       className="flex min-h-0 w-full flex-1 flex-col"
     >
@@ -241,7 +289,7 @@ export function LoginForm() {
               Code sent to
             </p>
             <p
-              className="mb-3 break-all rounded-xl bg-[#FFF8F5] px-4 py-2.5 text-sm font-medium text-[#1A1A1A] ring-1 ring-[#FF7B5C]/12"
+              className="mb-3 break-all rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-[#1A1A1A] ring-1 ring-[#E8EBEF]"
               style={{ fontFamily: "var(--font-body)" }}
             >
               {email}
@@ -252,6 +300,9 @@ export function LoginForm() {
               style={{ fontFamily: "var(--font-body)" }}
             >
               Enter 6-digit code
+              <span className="mt-1 block text-xs font-normal text-[#9B9B9B]">
+                We&apos;ll sign you in automatically when it&apos;s complete.
+              </span>
             </label>
             <input
               ref={codeInputRef}
@@ -268,19 +319,37 @@ export function LoginForm() {
               className="w-full rounded-2xl border border-[#E8E8E8] px-4 py-3.5 text-center text-xl tracking-[0.4em] outline-none ring-[#FF7B5C] focus:border-[#FF7B5C] focus:ring-2 disabled:opacity-60"
               style={{ fontFamily: "var(--font-body)" }}
             />
-            <button
-              type="button"
-              onClick={() => {
-                setStep("email");
-                setMessage(null);
-                setError(null);
-                setCode("");
-              }}
-              className="mt-3 text-sm font-semibold text-[#FF7B5C] hover:text-[#FF6B4A]"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Use another email
-            </button>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2">
+              <button
+                type="button"
+                onClick={() => void resendOtp()}
+                disabled={
+                  resendLoading || resendCooldown > 0 || loading || !email.trim()
+                }
+                className="text-left text-sm font-semibold text-[#5C6670] underline decoration-[#B8C0C8] underline-offset-2 transition-colors hover:text-[#1A1A1A] hover:decoration-[#1A1A1A] disabled:cursor-not-allowed disabled:text-[#B0B8C0] disabled:no-underline"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                {resendLoading
+                  ? "Sending…"
+                  : resendCooldown > 0
+                    ? `Resend code in ${resendCooldown}s`
+                    : "Resend code"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("email");
+                  setMessage(null);
+                  setError(null);
+                  setCode("");
+                  setResendCooldown(0);
+                }}
+                className="text-left text-sm font-semibold text-[#5C6670] underline decoration-[#B8C0C8] underline-offset-2 transition-colors hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                Use another email
+              </button>
+            </div>
           </div>
         )}
 
@@ -318,11 +387,17 @@ export function LoginForm() {
           style={{ fontFamily: "var(--font-body)" }}
         >
           No password — we&apos;ll email you a secure code. By continuing you agree to our{" "}
-          <Link href="/terms" className="underline hover:text-[#6B6B6B]">
+          <Link
+            href="/terms"
+            className="font-medium text-[#6B6B6B] underline decoration-[#C8C8C8] underline-offset-2 hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
+          >
             Terms
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
+          <Link
+            href="/privacy"
+            className="font-medium text-[#6B6B6B] underline decoration-[#C8C8C8] underline-offset-2 hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
+          >
             Privacy
           </Link>
           .

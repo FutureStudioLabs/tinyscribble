@@ -13,7 +13,7 @@ export async function LoginStatus() {
 
   return (
     <div
-      className="mb-8 w-full max-w-md rounded-2xl border border-[#FF7B5C]/20 bg-white/80 px-4 py-4 text-center shadow-sm"
+      className="mb-8 w-full max-w-md rounded-2xl border border-[#E8EBEF] bg-white/90 px-4 py-4 text-center shadow-sm"
       style={{ fontFamily: "var(--font-body)" }}
     >
       <p className="text-sm text-[#6B6B6B]">Signed in as</p>

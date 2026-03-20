@@ -36,6 +36,7 @@ export function CreateVideoCta({ activeVariant }: Props) {
           authenticated: !!data.authenticated,
           entitled: !!data.entitled,
           subscriptionStatus: data.subscriptionStatus ?? null,
+          trialVideoQuota: data.trialVideoQuota ?? null,
         });
       } catch {
         if (!cancelled) {
@@ -44,6 +45,7 @@ export function CreateVideoCta({ activeVariant }: Props) {
             authenticated: false,
             entitled: false,
             subscriptionStatus: null,
+            trialVideoQuota: null,
           });
         }
       }

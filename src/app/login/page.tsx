@@ -47,7 +47,7 @@ export default async function LoginPage({
           <HeaderUserAvatar />
           <Link
             href="/"
-            className="text-sm font-semibold text-[#FF7B5C] hover:text-[#FF6B4A]"
+            className="text-sm font-semibold text-[#5C6670] transition-colors hover:text-[#1A1A1A]"
             style={{ fontFamily: "var(--font-body)" }}
           >
             Back
@@ -80,7 +80,7 @@ export default async function LoginPage({
           {isSwitchAccountFlow ? (
             <Link
               href="/dashboard"
-              className="mb-6 inline-flex text-sm font-semibold text-[#FF7B5C] underline underline-offset-2 hover:text-[#FF6B4A]"
+              className="mb-6 inline-flex text-sm font-semibold text-[#1A1A1A] underline decoration-[#C8C8C8] underline-offset-2 transition-colors hover:decoration-[#1A1A1A]"
               style={{ fontFamily: "var(--font-body)" }}
             >
               Go to dashboard →

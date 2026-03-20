@@ -1,3 +1,4 @@
+import { TRIAL_FREE_VIDEO_LIMIT } from "@/constants/trial";
 import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
 import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
@@ -6,9 +7,26 @@ import { NextResponse } from "next/server";
 
 export type BillingEntitlementResponse = BillingEntitlementPayload;
 
+async function countGalleryVideos(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("gallery_items")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .like("r2_key", "videos/%");
+
+  if (error) {
+    console.error("billing entitlement: video count", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
 /**
  * Whether the current session may use subscription-gated features (e.g. video).
- * Reads `billing_customers` with the user session (RLS): own row via `auth_user_id` or email.
+ * Reads `billing_customers` with the user session (RLS).
  */
 export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
   const supabase = await createClient();
@@ -21,6 +39,7 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
       authenticated: false,
       entitled: false,
       subscriptionStatus: null,
+      trialVideoQuota: null,
     });
   }
 
@@ -35,12 +54,24 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
       authenticated: true,
       entitled: false,
       subscriptionStatus: null,
+      trialVideoQuota: null,
     });
+  }
+
+  const normalized = status?.trim().toLowerCase() ?? "";
+  const isTrialing = normalized === "trialing";
+  let trialVideoQuota: BillingEntitlementPayload["trialVideoQuota"] = null;
+
+  if (isTrialing) {
+    const used = await countGalleryVideos(supabase, user.id);
+    const remaining = Math.max(0, TRIAL_FREE_VIDEO_LIMIT - used);
+    trialVideoQuota = { remaining, limit: TRIAL_FREE_VIDEO_LIMIT };
   }
 
   return NextResponse.json({
     authenticated: true,
     entitled: isSubscriptionEntitled(status),
     subscriptionStatus: status,
+    trialVideoQuota,
   });
 }

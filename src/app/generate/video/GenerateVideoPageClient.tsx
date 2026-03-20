@@ -4,6 +4,7 @@ import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
 import { SketchMagicLoader } from "@/components/SketchMagicLoader";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
+import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { getGeneratedVariantKeys } from "@/lib/generated-variants-cache";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
@@ -244,6 +245,9 @@ export function GenerateVideoPageClient() {
           setVideoMediaUrl(data.mediaUrl);
           setVideoPhase("complete");
           setProgress(100);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent(TRIAL_VIDEO_QUOTA_CHANGED_EVENT));
+          }
           return;
         }
 

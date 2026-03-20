@@ -20,7 +20,7 @@ export function SignOutButton() {
           setLoading(false);
         })();
       }}
-      className="text-sm font-semibold text-[#FF7B5C] underline-offset-2 hover:text-[#FF6B4A] hover:underline disabled:opacity-60"
+      className="text-sm font-semibold text-[#5C6670] underline-offset-2 transition-colors hover:text-[#1A1A1A] hover:underline disabled:opacity-60"
       style={{ fontFamily: "var(--font-body)" }}
     >
       {loading ? "Signing out…" : "Sign out"}
