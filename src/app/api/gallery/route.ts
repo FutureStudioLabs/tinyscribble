@@ -1,10 +1,13 @@
-import { getPresignedGetUrl } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-/** Returns gallery items for the authenticated user (RLS). */
+/**
+ * Returns gallery items for the authenticated user (RLS).
+ * Previews use same-origin `/api/media` so missing objects return a normal 404/JSON
+ * from the app — not raw S3/R2 XML in the browser (presigned direct-to-R2 URLs do that).
+ */
 export async function GET() {
   const supabase = await createClient();
   const {
@@ -26,24 +29,12 @@ export async function GET() {
     return NextResponse.json({ items: [], error: error.message }, { status: 500 });
   }
 
-  const rows = items ?? [];
-  const mapped = await Promise.all(
-    rows.map(async (row) => {
-      let previewUrl: string;
-      try {
-        previewUrl = await getPresignedGetUrl(row.r2_key, 3600);
-      } catch (e) {
-        console.error("gallery presign", row.r2_key?.slice(0, 64), e);
-        previewUrl = `/api/media?key=${encodeURIComponent(row.r2_key)}`;
-      }
-      return {
-        id: row.id,
-        r2Key: row.r2_key,
-        createdAt: row.created_at,
-        previewUrl,
-      };
-    })
-  );
-
-  return NextResponse.json({ items: mapped });
+  return NextResponse.json({
+    items: (items ?? []).map((row) => ({
+      id: row.id,
+      r2Key: row.r2_key,
+      createdAt: row.created_at,
+      previewUrl: `/api/media?key=${encodeURIComponent(row.r2_key)}`,
+    })),
+  });
 }
