@@ -1,6 +1,8 @@
 import { getObjectBuffer, isAllowedMediaKey } from "@/lib/r2-server";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 /** Same-origin proxy for R2 objects (private bucket). Only uploads/* and generated/*. */
 export async function GET(request: NextRequest) {
   const key = request.nextUrl.searchParams.get("key");
