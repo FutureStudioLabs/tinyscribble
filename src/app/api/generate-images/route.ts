@@ -1,6 +1,13 @@
+import {
+  TRIAL_FREE_IMAGE_LIMIT,
+  TRIAL_IMAGE_BATCH_SIZE,
+  TRIAL_IMAGE_LIMIT_CODE,
+} from "@/constants/trial";
 import { generateNanoBananaImage } from "@/lib/apiyi-image";
+import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
 import { getPresignedGetUrl, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
+import { countGalleryGeneratedForUser } from "@/lib/trial-gallery-counts";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
@@ -24,15 +31,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user?.id) {
+    const { status, errorMessage } = await fetchBillingCustomerStatusForUser(supabase, user);
+    if (!errorMessage && status?.trim().toLowerCase() === "trialing") {
+      const used = await countGalleryGeneratedForUser(supabase, user.id);
+      if (used + TRIAL_IMAGE_BATCH_SIZE > TRIAL_FREE_IMAGE_LIMIT) {
+        return NextResponse.json(
+          {
+            error:
+              "Your trial includes up to 5 CGI images. Subscribe in Billing to create more.",
+            code: TRIAL_IMAGE_LIMIT_CODE,
+          },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
       const push = (obj: unknown) => controller.enqueue(ndjsonLine(obj));
 
       try {
         push({ type: "progress", percent: 2 });
-        const supabase = await createClient();
         const {
-          data: { user },
+          data: { user: streamUser },
         } = await supabase.auth.getUser();
 
         const drawingUrl = await getPresignedGetUrl(r2Key, 3600);
@@ -75,9 +103,9 @@ export async function POST(request: NextRequest) {
           putObjectBuffer(keys[2], buf3, "image/png"),
         ]);
 
-        if (user?.id) {
+        if (streamUser?.id) {
           const { error: galleryErr } = await supabase.from("gallery_items").insert(
-            keys.map((k) => ({ user_id: user.id, r2_key: k }))
+            keys.map((k) => ({ user_id: streamUser.id, r2_key: k }))
           );
           if (galleryErr) console.error("gallery_items insert (images)", galleryErr);
         }

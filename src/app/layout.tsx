@@ -1,4 +1,5 @@
 import { AuthBroadcastListener } from "@/components/auth/AuthBroadcastListener";
+import { TrialLifecycleChrome } from "@/components/trial/TrialLifecycleChrome";
 import type { Metadata } from "next";
 import { Fredoka, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -32,6 +33,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <AuthBroadcastListener />
+        <TrialLifecycleChrome />
         {children}
       </body>
     </html>

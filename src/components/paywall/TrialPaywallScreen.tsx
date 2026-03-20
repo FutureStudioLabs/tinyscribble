@@ -29,6 +29,7 @@ import {
 
 type Plan = "monthly" | "yearly";
 
+/** Keep amounts aligned with `src/constants/starter-plan-display.ts` (Skip Trial modal). */
 const COPY = {
   monthly: { label: "Monthly", display: "$8.99", suffix: "/mo", stripeNote: "$8.99 per month" },
   yearly: {

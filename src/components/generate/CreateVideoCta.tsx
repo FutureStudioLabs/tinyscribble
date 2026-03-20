@@ -1,8 +1,9 @@
 "use client";
 
-import { VideoCameraIcon } from "@phosphor-icons/react";
-import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
+import { SkipTrialModal } from "@/components/trial/SkipTrialModal";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
+import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
+import { VideoCameraIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ type Gate =
 export function CreateVideoCta({ activeVariant }: Props) {
   const router = useRouter();
   const [gate, setGate] = useState<Gate>({ phase: "loading" });
+  const [skipTrialOpen, setSkipTrialOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,6 +39,7 @@ export function CreateVideoCta({ activeVariant }: Props) {
           entitled: !!data.entitled,
           subscriptionStatus: data.subscriptionStatus ?? null,
           trialVideoQuota: data.trialVideoQuota ?? null,
+          trialImageQuota: data.trialImageQuota ?? null,
         });
       } catch {
         if (!cancelled) {
@@ -46,6 +49,7 @@ export function CreateVideoCta({ activeVariant }: Props) {
             entitled: false,
             subscriptionStatus: null,
             trialVideoQuota: null,
+            trialImageQuota: null,
           });
         }
       }
@@ -74,17 +78,29 @@ export function CreateVideoCta({ activeVariant }: Props) {
   }
 
   if (gate.entitled) {
+    const trialVideoSpent =
+      gate.trialVideoQuota != null && gate.trialVideoQuota.remaining === 0;
+
     return (
-      <button
-        type="button"
-        onClick={() => router.push(videoPath)}
-        className={funnelPrimaryButtonClassName}
-        style={{ fontFamily: "var(--font-body)" }}
-        aria-label={`Create video from version ${v + 1}`}
-      >
-        <VideoCameraIcon size={22} weight="bold" aria-hidden />
-        Create video
-      </button>
+      <>
+        <SkipTrialModal open={skipTrialOpen} onClose={() => setSkipTrialOpen(false)} />
+        <button
+          type="button"
+          onClick={() => {
+            if (trialVideoSpent) {
+              setSkipTrialOpen(true);
+              return;
+            }
+            router.push(videoPath);
+          }}
+          className={funnelPrimaryButtonClassName}
+          style={{ fontFamily: "var(--font-body)" }}
+          aria-label={`Create video from version ${v + 1}`}
+        >
+          <VideoCameraIcon size={22} weight="bold" aria-hidden />
+          Create video
+        </button>
+      </>
     );
   }
 

@@ -11,7 +11,11 @@ import {
   FunnelPrimaryButton,
   funnelPrimaryButtonClassName,
 } from "@/components/ui/FunnelPrimaryButton";
+import { TRIAL_IMAGE_LIMIT_CODE } from "@/constants/trial";
+import { BillingApiError } from "@/lib/billing-api-error";
 import { formatErrorForUser } from "@/lib/format-user-error";
+import { createClient } from "@/lib/supabase/client";
+import { openStripeBillingPortal } from "@/lib/open-stripe-billing-portal-client";
 import {
   getGeneratedVariantKeys,
   saveGeneratedVariantKeys,
@@ -46,6 +50,8 @@ export default function GeneratePage() {
   const [variantKeys, setVariantKeys] = useState<string[] | null>(null);
   const [activeVariant, setActiveVariant] = useState(0);
   const [generateProgress, setGenerateProgress] = useState(0);
+  const [trialImageLimitHit, setTrialImageLimitHit] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -68,6 +74,7 @@ export default function GeneratePage() {
 
     setStatus("generating");
     setError(null);
+    setTrialImageLimitHit(false);
     setGenerateProgress(0);
 
     try {
@@ -77,7 +84,14 @@ export default function GeneratePage() {
       setStatus("ready");
       saveGeneratedVariantKeys(pending.r2Key, keys);
     } catch (e) {
+      if (e instanceof BillingApiError && e.code === TRIAL_IMAGE_LIMIT_CODE) {
+        setTrialImageLimitHit(true);
+        setError(e.message);
+        setStatus("error");
+        return;
+      }
       const raw = e instanceof Error ? e.message : "Something went wrong";
+      setTrialImageLimitHit(false);
       setError(raw);
       setStatus("error");
     }
@@ -178,24 +192,54 @@ export default function GeneratePage() {
                   className="text-[22px] font-bold text-[#1A1A1A] mb-3"
                   style={{ fontFamily: "var(--font-fredoka)" }}
                 >
-                  Couldn&apos;t finish the magic
+                  {trialImageLimitHit ? "Trial image limit reached" : "Couldn't finish the magic"}
                 </h1>
                 <p className="text-[#6B6B6B] mb-4" style={{ fontFamily: "var(--font-body)" }}>
-                  {formatErrorForUser(error ?? "")}
+                  {trialImageLimitHit
+                    ? error
+                    : formatErrorForUser(error ?? "")}
                 </p>
-                <SupportContact className="max-w-sm mx-auto" errorSummary={error} />
+                {trialImageLimitHit ? null : (
+                  <SupportContact className="max-w-sm mx-auto" errorSummary={error} />
+                )}
               </div>
             </div>
             <div className="flex w-full max-w-md mx-auto shrink-0 flex-col gap-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
-              <FunnelPrimaryButton
-                onClick={() => {
-                  startedRef.current = false;
-                  void runGeneration();
-                }}
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                Try again
-              </FunnelPrimaryButton>
+              {trialImageLimitHit ? (
+                <FunnelPrimaryButton
+                  onClick={async () => {
+                    setBillingBusy(true);
+                    try {
+                      const {
+                        data: { user },
+                      } = await createClient().auth.getUser();
+                      const email = user?.email?.trim();
+                      if (!email) {
+                        router.push("/dashboard/billing");
+                        return;
+                      }
+                      await openStripeBillingPortal(email, { returnPath: "/generate" });
+                    } catch {
+                      router.push("/dashboard/billing");
+                    } finally {
+                      setBillingBusy(false);
+                    }
+                  }}
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  {billingBusy ? "Opening billing…" : "Upgrade in Billing"}
+                </FunnelPrimaryButton>
+              ) : (
+                <FunnelPrimaryButton
+                  onClick={() => {
+                    startedRef.current = false;
+                    void runGeneration();
+                  }}
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  Try again
+                </FunnelPrimaryButton>
+              )}
               <button
                 type="button"
                 onClick={() => router.push("/upload")}

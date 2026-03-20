@@ -1,3 +1,5 @@
+import { BillingApiError } from "@/lib/billing-api-error";
+
 type StreamLine =
   | { type: "progress"; percent: number }
   | { type: "complete"; keys: string[] }
@@ -17,18 +19,21 @@ export async function streamGenerateImages(
       Accept: "application/x-ndjson",
     },
     body: JSON.stringify({ r2Key }),
+    credentials: "include",
   });
 
   if (!res.ok) {
     const text = await res.text();
     let msg = `Generation failed (${res.status})`;
+    let code: string | undefined;
     try {
-      const j = JSON.parse(text) as { error?: string };
+      const j = JSON.parse(text) as { error?: string; code?: string };
       if (j.error) msg = j.error;
+      if (typeof j.code === "string") code = j.code;
     } catch {
       /* keep msg */
     }
-    throw new Error(msg);
+    throw new BillingApiError(msg, code);
   }
 
   const reader = res.body?.getReader();

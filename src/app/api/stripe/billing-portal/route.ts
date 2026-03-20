@@ -11,6 +11,10 @@ const ALLOWED_RETURN_PATHS = new Set([
   "/dashboard/upload",
   "/dashboard/gallery",
   "/dashboard",
+  "/generate",
+  "/generate/video",
+  "/upload",
+  "/loading",
 ]);
 
 function resolveReturnPath(body: unknown): string {

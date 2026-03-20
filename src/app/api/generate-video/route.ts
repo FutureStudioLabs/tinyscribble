@@ -3,26 +3,45 @@ import {
   getVeoVideoStatus,
   submitVeoVideoJob,
 } from "@/lib/apiyi-video";
+import { TRIAL_FREE_VIDEO_LIMIT, TRIAL_VIDEO_EXHAUSTED_CODE } from "@/constants/trial";
 import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
 import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
 import { getObjectBuffer, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
+import { countGalleryVideosForUser } from "@/lib/trial-gallery-counts";
+import type { User } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
 
-async function userIsEntitled(): Promise<boolean> {
+async function assertVideoAccess(): Promise<
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; user: User }
+  | { ok: false; response: NextResponse }
+> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user?.id) return false;
-  const { status, errorMessage } = await fetchBillingCustomerStatusForUser(
-    supabase,
-    user
-  );
-  if (errorMessage) return false;
-  return isSubscriptionEntitled(status);
+  if (!user?.id) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Subscription required" }, { status: 403 }),
+    };
+  }
+  const { status, errorMessage } = await fetchBillingCustomerStatusForUser(supabase, user);
+  if (errorMessage) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Subscription required" }, { status: 403 }),
+    };
+  }
+  if (!isSubscriptionEntitled(status)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Subscription required" }, { status: 403 }),
+    };
+  }
+  return { ok: true, supabase, user };
 }
 
 function isGeneratedKey(key: string): boolean {
@@ -38,8 +57,22 @@ function safeVideoKey(jobId: string): string {
  * POST { cgiKey } — start VEO job from R2 CGI frame. Returns { jobId }.
  */
 export async function POST(request: NextRequest) {
-  if (!(await userIsEntitled())) {
-    return NextResponse.json({ error: "Subscription required" }, { status: 403 });
+  const access = await assertVideoAccess();
+  if (!access.ok) return access.response;
+
+  const { supabase, user } = access;
+  const { status } = await fetchBillingCustomerStatusForUser(supabase, user);
+  if (status?.trim().toLowerCase() === "trialing") {
+    const used = await countGalleryVideosForUser(supabase, user.id);
+    if (used >= TRIAL_FREE_VIDEO_LIMIT) {
+      return NextResponse.json(
+        {
+          error: "Your trial includes one free video. Subscribe to create more.",
+          code: TRIAL_VIDEO_EXHAUSTED_CODE,
+        },
+        { status: 403 }
+      );
+    }
   }
 
   let body: { cgiKey?: string };
@@ -69,9 +102,8 @@ export async function POST(request: NextRequest) {
  * GET ?jobId= — poll status; when completed, pull MP4 into R2 and return { status, r2Key? }.
  */
 export async function GET(request: NextRequest) {
-  if (!(await userIsEntitled())) {
-    return NextResponse.json({ error: "Subscription required" }, { status: 403 });
-  }
+  const access = await assertVideoAccess();
+  if (!access.ok) return access.response;
 
   const jobId = request.nextUrl.searchParams.get("jobId")?.trim() ?? "";
   if (!jobId || jobId.length > 200) {

@@ -44,3 +44,72 @@ export async function fetchBillingCustomerStatusForUser(
 
   return { status: null, errorMessage: null };
 }
+
+export type BillingCustomerStripeRow = {
+  status: string;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+};
+
+/**
+ * Subscription + customer ids for Stripe server calls (RLS: same visibility as status).
+ */
+export async function fetchBillingCustomerStripeRowForUser(
+  supabase: SupabaseClient,
+  user: Pick<User, "id" | "email">
+): Promise<{ row: BillingCustomerStripeRow | null; errorMessage: string | null }> {
+  const { data: byUserId, error: errUserId } = await supabase
+    .from("billing_customers")
+    .select("status, stripe_subscription_id, stripe_customer_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (errUserId) {
+    return { row: null, errorMessage: errUserId.message };
+  }
+  if (byUserId?.status != null && String(byUserId.status).trim() !== "") {
+    return {
+      row: {
+        status: String(byUserId.status).trim(),
+        stripe_subscription_id: byUserId.stripe_subscription_id
+          ? String(byUserId.stripe_subscription_id).trim()
+          : null,
+        stripe_customer_id: byUserId.stripe_customer_id
+          ? String(byUserId.stripe_customer_id).trim()
+          : null,
+      },
+      errorMessage: null,
+    };
+  }
+
+  const emailLower = user.email?.trim().toLowerCase() ?? "";
+  if (!emailLower) {
+    return { row: null, errorMessage: null };
+  }
+
+  const { data: byEmail, error: errEmail } = await supabase
+    .from("billing_customers")
+    .select("status, stripe_subscription_id, stripe_customer_id")
+    .eq("email", emailLower)
+    .maybeSingle();
+
+  if (errEmail) {
+    return { row: null, errorMessage: errEmail.message };
+  }
+  if (byEmail?.status != null && String(byEmail.status).trim() !== "") {
+    return {
+      row: {
+        status: String(byEmail.status).trim(),
+        stripe_subscription_id: byEmail.stripe_subscription_id
+          ? String(byEmail.stripe_subscription_id).trim()
+          : null,
+        stripe_customer_id: byEmail.stripe_customer_id
+          ? String(byEmail.stripe_customer_id).trim()
+          : null,
+      },
+      errorMessage: null,
+    };
+  }
+
+  return { row: null, errorMessage: null };
+}

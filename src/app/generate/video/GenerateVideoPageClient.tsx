@@ -3,8 +3,9 @@
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
 import { SketchMagicLoader } from "@/components/SketchMagicLoader";
+import { SkipTrialModal } from "@/components/trial/SkipTrialModal";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
-import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
+import { TRIAL_VIDEO_EXHAUSTED_CODE, TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { getGeneratedVariantKeys } from "@/lib/generated-variants-cache";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
@@ -44,6 +45,7 @@ export function GenerateVideoPageClient() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [videoMediaUrl, setVideoMediaUrl] = useState<string | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [skipTrialOpen, setSkipTrialOpen] = useState(false);
   const jobIdRef = useRef<string | null>(null);
   const pollAbortRef = useRef(false);
   const postInFlightRef = useRef(false);
@@ -145,8 +147,14 @@ export function GenerateVideoPageClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cgiKey: cgi }),
       });
-      const data = (await res.json()) as { jobId?: string; error?: string };
+      const data = (await res.json()) as { jobId?: string; error?: string; code?: string };
       if (!res.ok) {
+        if (data.code === TRIAL_VIDEO_EXHAUSTED_CODE) {
+          setSkipTrialOpen(true);
+          setVideoPhase("idle");
+          setProgress(0);
+          return;
+        }
         throw new Error(data.error || "Could not start video");
       }
       if (!data.jobId) {
@@ -311,7 +319,9 @@ export function GenerateVideoPageClient() {
         : "Making sure your subscription is active. Right after checkout this can take a few seconds while Stripe and your account sync.";
 
     return (
-      <div className="flex min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] via-[#FFFAF7] to-[#FFE8E0]">
+      <>
+        <SkipTrialModal open={skipTrialOpen} onClose={() => setSkipTrialOpen(false)} />
+        <div className="flex min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] via-[#FFFAF7] to-[#FFE8E0]">
         <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
           <Logo />
           <HeaderUserAvatar />
@@ -373,6 +383,7 @@ export function GenerateVideoPageClient() {
           </div>
         </main>
       </div>
+      </>
     );
   }
 
@@ -381,7 +392,9 @@ export function GenerateVideoPageClient() {
   const showComplete = videoPhase === "complete" && videoMediaUrl;
 
   return (
-    <div className="flex h-[100vh] min-h-[100vh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+    <>
+      <SkipTrialModal open={skipTrialOpen} onClose={() => setSkipTrialOpen(false)} />
+      <div className="flex h-[100vh] min-h-[100vh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
         <HeaderUserAvatar />
@@ -545,5 +558,6 @@ export function GenerateVideoPageClient() {
         )}
       </main>
     </div>
+    </>
   );
 }
