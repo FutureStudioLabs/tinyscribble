@@ -1,3 +1,5 @@
+import { clearGeneratedVariantKeys } from "@/lib/generated-variants-cache";
+
 /**
  * Simple store to pass selected file from upload page to loading page.
  * Used during client-side navigation since we can't pass File via URL.
@@ -7,6 +9,7 @@ let previewUrl: string | null = null;
 let r2Key: string | null = null;
 
 export function setPendingUpload(file: File) {
+  if (r2Key) clearGeneratedVariantKeys(r2Key);
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   pendingFile = file;
   previewUrl = URL.createObjectURL(file);
@@ -27,6 +30,7 @@ export function getPendingUpload(): {
 }
 
 export function clearPendingUpload() {
+  if (r2Key) clearGeneratedVariantKeys(r2Key);
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   pendingFile = null;
   previewUrl = null;

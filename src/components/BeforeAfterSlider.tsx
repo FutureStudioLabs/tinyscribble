@@ -10,6 +10,8 @@ interface BeforeAfterSliderProps {
   afterAlt?: string;
   /** Auto-reveal from right to left on load */
   autoReveal?: boolean;
+  /** Use for blob: URLs or when Next/Image remote config is not needed */
+  unoptimized?: boolean;
 }
 
 export function BeforeAfterSlider({
@@ -18,6 +20,7 @@ export function BeforeAfterSlider({
   beforeAlt = "Child's original drawing",
   afterAlt = "AI-generated CGI result",
   autoReveal = true,
+  unoptimized = false,
 }: BeforeAfterSliderProps) {
   const [position, setPosition] = useState(100); // Start with full "after" (right side)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +101,7 @@ export function BeforeAfterSlider({
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 600px"
           priority
+          unoptimized={unoptimized}
         />
       </div>
 
@@ -113,6 +117,7 @@ export function BeforeAfterSlider({
           className="object-cover object-[left_top]"
           sizes="(max-width: 768px) 100vw, 600px"
           priority
+          unoptimized={unoptimized}
         />
       </div>
 

@@ -114,7 +114,7 @@ When `/loading` mounts:
 ## Technical Notes
 
 - **File passing:** Use React state/context or URL state to pass the selected file (or preview URL) to `/loading`
-- **API call:** Start upload to R2 + image generation API in background as soon as `/loading` mounts
+- **API call:** Start upload to R2 + image generation (**APIyi** — see `docs/INTEGRATIONS.md` and [docs.apiyi.com](https://docs.apiyi.com/en)) in background as soon as the loading/generation step mounts
 - **Reduced motion:** Respect `prefers-reduced-motion: reduce` — skip animations, instant transitions
 
 ---

@@ -127,7 +127,8 @@ All buttons are **pill-shaped** (`border-radius: 999px`).
 
 | Type | Background | Text | Height | Usage |
 |------|------------|------|--------|-------|
-| **Primary** | `#FF7B5C` (Warm Coral) | White, bold | 56px min | Main CTAs (Upload, Start Trial) |
+| **Primary (funnel)** | `#FF7B5C` → hover `#FF6B4A` | White, bold | 56px min | Upload, loading, generate, landing CTAs — `FunnelPrimaryButton` / `funnelPrimaryButtonClassName` |
+| **Primary (paywall)** | `#1A1A1A` | White, bold | 56px min | Trial / exit Stripe screens — `PaywallPrimaryButton` |
 | **Secondary** | `#4ECDC4` (Mint Pop) | White, bold | 56px min | Secondary actions |
 | **Ghost** | Transparent | `#FF7B5C`, border `#FF7B5C` | 48px min | Login, dismiss |
 | **Outline** | White | `#FF7B5C`, border `#FF7B5C` | 40px | Badges, small actions |

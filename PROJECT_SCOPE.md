@@ -1,7 +1,9 @@
 # TinyScribble — Technical Scope & Architecture
 
-**Version 1.3 · March 2026**  
+**Version 1.5 · March 2026**  
 **Future Studio LLC · Confidential**
+
+> **Integrations detail:** [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) · **APIYI implementation:** [`docs/APIYI_INTEGRATION_BRIEF.md`](docs/APIYI_INTEGRATION_BRIEF.md) (models `nano-banana` / `veo-3.1-fast-fl`, 3× parallel images, prompts, R2, Sentry).
 
 ---
 
@@ -14,11 +16,11 @@
 | **Database** | Supabase (PostgreSQL) | User data, sessions, metadata |
 | **Auth** | Supabase Auth | Magic link only, no passwords |
 | **Storage** | Cloudflare R2 | Images, videos, drawings |
-| **Image Generation** | Google Nano Banana 2 (Gemini 3.1 Flash) via nanobananaapi.ai | ~$0.04/image, 45–60s |
-| **Video Generation** | Veo 3.1 via kie.ai | ~$0.30 per 8s video, 60–90s |
-| **Payments** | Stripe (hosted Checkout) | Subscriptions, 3-day trial, card collection |
+| **Image & video generation** | **[APIYI](https://apiyi.com)** — [docs](https://docs.apiyi.com/en) + [`docs/APIYI_INTEGRATION_BRIEF.md`](docs/APIYI_INTEGRATION_BRIEF.md) | `nano-banana` (3× parallel before paywall) · `veo-3.1-fast-fl` (multipart, async) |
+| **Payments** | Stripe (hosted Checkout) | Subscriptions; sandbox + products configured for engineering |
 | **Email** | Resend | Magic links, transactional emails |
-| **Analytics** | PostHog | Event tracking, funnel analysis |
+| **Analytics** | **PostHog** | Event tracking, funnel analysis |
+| **Error monitoring** | **Sentry** | Crashes & errors — **must verify with a real test event before calling integration complete** |
 
 ### Key Constraints
 
@@ -76,12 +78,14 @@
 
 | Element | Specification |
 |---------|---------------|
-| Background | Soft animated gradient (pastel purples/blues) |
+| **API** | APIYI `nano-banana` — **3 parallel calls** (`Promise.all`), same R2 drawing URL + prompt; ~45–60s wall time total (see `APIYI_INTEGRATION_BRIEF.md`) |
+| **Paywall** | Image step is **before** paywall (per-image cost absorbed) |
+| Background | Soft animated gradient (pastel purples/blues) or Coral Dream |
 | Drawing preview | Small rounded card, centered, blurred edges |
 | Animated icon | Sparkle/wand pulsing |
 | Messages | Rotating every 8–10s (6-message sequence) |
-| Progress bar | Thin, slow-fill calibrated to ~55s, not percentage-based |
-| Error state | >90s or failure: retry button, PostHog log |
+| Progress bar | Thin, slow-fill; may track wall time until all 3 complete |
+| Error state | >90s or failure: retry, PostHog + Sentry per brief |
 
 ### 3.4 Result — Image Preview
 
@@ -92,7 +96,7 @@
 | Handle behavior | Auto-animates right→left on load, then center for user |
 | Drawing thumbnail | Always visible in corner |
 | Primary CTA | "Bring It to Life 🎬" → Stripe paywall |
-| Variations | "See more versions" — 2 additional variants (v2; defer if complex) |
+| **Variants** | **3 CGI images** generated upfront; show image 1 first; "Try another" swaps to 2 or 3 **instantly** (already on R2). Track `image_accepted` (1\|2\|3) in Supabase for video step. PostHog: `image_1_accepted`, `image_2_accepted`, `image_3_accepted` |
 
 ### 3.5 Paywall — Stripe Direct
 
@@ -101,14 +105,23 @@
 | Layout | Top-to-bottom per Cal AI paywall_sample.png |
 | Heading | "Start your 3-day FREE trial to continue." |
 | Trial timeline | Vertical timeline: TODAY (lock) → DAY 2 (bell) → DAY 3 (crown) |
-| Plan cards | Monthly ($7.99/mo) | Annual ($4.17/mo, billed $49.99/yr) |
-| Annual display | Large: "$4.17/mo" — Small: "Billed as $49.99/yr" |
-| Badges | "3 DAYS FREE", "Best Value" on annual |
+| **Starter (initial plans)** | **Monthly $8.99/mo** · **Annual $47.99/yr** shown as **$3.99/mo** (regular annual) |
+| **Exit promo (Starter only)** | **$35.99/yr** shown as **$2.99/mo** — only on exit-intent / exit promo surface (see triggers below) |
+| **3-day trial** | Apply in **code** via `trial_period_days: 3` — **not** configured on Stripe products for Starter |
+| **Family / Power** | **Upgrade-only** after subscribe + usage; **no trial** on these tiers |
+| Badges | "3 DAYS FREE", "Best Value" on annual where applicable |
 | No Payment line | "✓ No Payment Due Now" — prominent |
 | CTA button | "Start Free Trial" — full-width, black (Cal AI style) |
 | Stripe type | Hosted Checkout (redirect) |
 
-**Stripe subscription config:**
+**Exit offer triggers (main trial paywall → `/paywall/exit`):**
+
+| Trigger | Rule (client) |
+|---------|----------------|
+| **Idle dwell** | User has **no** pointer / keyboard / touch / scroll (on paywall) for **20 seconds** → navigate to exit offer. Timer resets on any such activity. |
+| **Back / leave** | In-app **back** from trial paywall goes to the **exit offer** first (not directly to the result screen). **Close (X)** on the exit offer returns to **`/generate`** (last image). **“Back to trial screen”** returns to the main paywall; **“Return to my image”** also goes to **`/generate`**. |
+
+**Stripe subscription config (Starter):**
 
 ```javascript
 trial_period_days: 3
@@ -116,15 +129,26 @@ payment_behavior: "default_incomplete"
 save_default_payment_method: "on_subscription"
 ```
 
-### 3.6 Loading — Video Generation (60–90s)
+**Stripe products (sandbox — 3 products):**
+
+| Product | Role | Pricing | Trial | Notes |
+|---------|------|---------|-------|--------|
+| **TinyScribble Starter** | First purchase | $8.99/mo; $47.99/yr → show **$3.99/mo**; $35.99/yr → show **$2.99/mo** (exit promo only) | 3 days in code | Main paywall |
+| **TinyScribble Family** | Upsell | $89.99/yr → show **$6.99/mo** | None | **6 videos/mo** when user hits limits |
+| **TinyScribble Power** | Upsell | $119.99/yr → show **$9.99/mo** | None | **10 videos/mo** |
+
+**Customer metadata (required):** Every Stripe Customer must include `metadata: { supabase_user_id: "<uuid>" }` for clean matching, migrations, and webhooks.
+
+### 3.6 Loading — Video Generation (30–60s typical)
 
 | Element | Specification |
 |---------|---------------|
+| **API** | APIYI **`veo-3.1-fast-fl`** — `multipart/form-data`, async poll, download MP4 → R2 within 24h URL expiry (see brief) |
 | Visual | Selected AI image centered, soft particles/sparkles |
 | Badge | "🎬 Creating your video…" — pulsing |
 | Messages | Rotate every 10s (5-message sequence) |
-| Progress bar | Thin, calibrated to ~75s |
-| Background generation | If user leaves: continue in background, email on completion |
+| Progress bar | Thin; poll every 5–10s; max wait 10 min |
+| Background generation | If user leaves: continue on server, email on completion, gallery on return |
 
 ### 3.7 Gallery
 
@@ -165,23 +189,24 @@ save_default_payment_method: "on_subscription"
 
 - Landing page (all sections)
 - Upload flow (mobile + desktop)
-- Image generation (Nano Banana 2)
+- Image generation (APIyi)
 - Result screen with before/after slider
 - Stripe paywall (in-house UI, hosted Checkout)
-- Video generation (Veo 3.1)
+- Video generation (APIyi)
 - Gallery with trial banner
 - Full trial lifecycle (skip, banner, reminder, expiry)
 - Magic link auth
 - PostHog analytics (all events)
+- Sentry error monitoring (verified with test events)
 - Resend transactional emails
 
 ### Deferred / Open (v2)
 
 | Item | Status |
 |------|--------|
-| 3 parallel image variations on result screen | Defer to v2 (adds $0.08/session + complexity) |
+| ~~3 parallel image variations~~ | **In v1** per `APIYI_INTEGRATION_BRIEF.md` — 3× `nano-banana` in parallel ($0.06/user onboarding) |
 | Push notification for "video ready" | Email-only for v1; confirm |
-| nanobananaapi.ai vs APIYI | Ashik to verify API docs and reliability |
+| ~~nanobananaapi.ai vs APIYI~~ | **Resolved:** use **APIyi** — see `docs/INTEGRATIONS.md` |
 
 ### Out of Scope
 
@@ -200,12 +225,13 @@ save_default_payment_method: "on_subscription"
 |-------|---------|
 | `landing_page_view` | Arrives at tinyscribble.com |
 | `upload_started` | Taps Upload Your Drawing |
-| `image_generated` | NB2 returns (`generation_time_seconds`) |
+| `image_generated` | All 3 APIYI image jobs complete (`generation_time_seconds`) |
+| `image_1_accepted` / `image_2_accepted` / `image_3_accepted` | User locks variant for video |
 | `result_viewed` | Sees generated image + slider |
 | `cta_tapped` | Taps Bring It to Life 🎬 |
 | `paywall_shown` | Stripe paywall renders |
 | `trial_started` | Stripe subscription: trialing |
-| `video_generated` | Veo returns (`generation_time_seconds`) |
+| `video_generated` | APIyi video job returns (`generation_time_seconds`) |
 | `video_downloaded` | User downloads video |
 | `second_drawing_started` | User uploads second drawing |
 | `skip_trial_modal_shown` | Skip Trial modal fires |
@@ -238,10 +264,9 @@ save_default_payment_method: "on_subscription"
 
 | Item | Cost |
 |------|------|
-| Image generation (1x) | ~$0.04 |
-| Image variations (3x, if v2) | +$0.08 |
-| Video generation | ~$0.30 |
+| Image generation (3× parallel, onboarding) | ~$0.06 per user (3 × $0.02) per APIYI brief |
+| Video generation | Per APIyi billing |
 
 ---
 
-*End of Technical Scope — v1.3*
+*End of Technical Scope — v1.5*

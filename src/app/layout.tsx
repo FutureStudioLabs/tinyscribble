@@ -1,3 +1,4 @@
+import { AuthBroadcastListener } from "@/components/auth/AuthBroadcastListener";
 import type { Metadata } from "next";
 import { Fredoka, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -29,7 +30,10 @@ export default function RootLayout({
       lang="en"
       className={`${fredoka.variable} ${plusJakarta.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <AuthBroadcastListener />
+        {children}
+      </body>
     </html>
   );
 }

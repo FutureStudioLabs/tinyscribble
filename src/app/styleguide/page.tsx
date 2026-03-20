@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
+import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,13 +25,16 @@ export default function StyleguidePage() {
       <header className="sticky top-0 z-10 border-b border-[#FF7B5C]/10 bg-[#FFF8F5]/90 backdrop-blur-md px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
           <Logo />
-          <Link
-            href="/"
-            className="text-sm font-semibold text-[#FF7B5C] hover:text-[#FF6B4A]"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            ← Back to app
-          </Link>
+          <div className="flex items-center gap-3">
+            <HeaderUserAvatar showLoginWhenAnonymous />
+            <Link
+              href="/"
+              className="text-sm font-semibold text-[#FF7B5C] hover:text-[#FF6B4A]"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              ← Back to app
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -188,13 +193,12 @@ export default function StyleguidePage() {
               <p className="mb-3 text-sm font-semibold text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
                 Primary button
               </p>
-              <button
-                type="button"
-                className="flex h-14 w-full max-w-sm items-center justify-center rounded-full bg-[#FF7B5C] text-white font-bold text-base transition-colors hover:bg-[#FF6B4A] active:scale-[0.98]"
+              <FunnelPrimaryButton
+                className="max-w-sm"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 Bring your image to life
-              </button>
+              </FunnelPrimaryButton>
             </div>
             <div>
               <p className="mb-3 text-sm font-semibold text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
@@ -202,7 +206,7 @@ export default function StyleguidePage() {
               </p>
               <button
                 type="button"
-                className="flex h-12 w-full max-w-sm items-center justify-center rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5"
+                className="flex h-14 min-h-[56px] w-full max-w-sm items-center justify-center rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 Upload Your Drawing

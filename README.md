@@ -1,5 +1,12 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Project documentation
+
+- **[PROJECT_SCOPE.md](./PROJECT_SCOPE.md)** — product & technical scope (v1.4)
+- **[docs/INTEGRATIONS.md](./docs/INTEGRATIONS.md)** — Stripe, PostHog, Sentry, env vars
+- **[docs/APIYI_INTEGRATION_BRIEF.md](./docs/APIYI_INTEGRATION_BRIEF.md)** — APIYI image/video API (v1.0 brief)
+- Copy **`.env.example`** → **`.env.local`** and fill in secrets (never commit real keys)
+
 ## Getting Started
 
 First, run the development server:

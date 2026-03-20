@@ -1,44 +1,49 @@
 import Link from "next/link";
 import Image from "next/image";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
+import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
+import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
 import { Footer } from "@/components/Footer";
 import { JustPictureIt } from "@/components/JustPictureIt";
 import { Logo } from "@/components/Logo";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FFF8F5]">
       {/* Sticky header */}
       <header className="sticky top-0 z-50 flex-shrink-0 flex items-center justify-between px-5 pt-4 pb-4 bg-[#FFF8F5]/80 backdrop-blur-md border-b border-white/20">
         <Logo />
-        <Link
-          href="/login"
-          className="flex h-12 min-h-[48px] items-center justify-center rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          Login
-        </Link>
+        <HeaderUserAvatar showLoginWhenAnonymous />
       </header>
 
-      {/* Hero — fits in 100vh, above the fold */}
-      <div className="h-screen min-h-[100dvh] flex flex-col">
-        {/* Hero content — flex-1 to fill remaining space, no top padding (flush with nav) */}
-        <main className="flex-1 flex flex-col items-center justify-start pt-2 px-5 pb-6 min-h-0 overflow-y-auto">
+      {/* Hero — min 100vh; CTA follows headline (not pinned to viewport bottom) */}
+      <main className="min-h-[100vh] px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="mx-auto flex w-full max-w-md flex-col items-center">
           {/* Hero video — autoplay looping, silent */}
-          <div className="w-full max-w-md mx-auto mb-4 rounded-2xl overflow-hidden aspect-[3/4] max-h-[50vh] flex items-center justify-center bg-black flex-shrink-0">
+          <div className="mb-4 flex aspect-[3/4] max-h-[50vh] w-full max-w-md flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black">
             <video
               src="/main.mp4"
               autoPlay
               loop
               muted
               playsInline
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
 
           {/* Headline */}
           <h1
-            className="text-center text-[32px] font-bold text-[#1A1A1A] mb-2 max-w-md"
+            className="mb-2 max-w-md text-center text-[32px] font-bold text-[#1A1A1A]"
             style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
           >
             Bring Your Child&apos;s
@@ -48,7 +53,7 @@ export default function Home() {
 
           {/* Subheadline with Free badge */}
           <p
-            className="text-center text-[#6B6B6B] text-base sm:text-lg mb-4 flex flex-wrap items-center justify-center gap-2"
+            className="mb-6 flex flex-wrap items-center justify-center gap-2 text-center text-base text-[#6B6B6B] sm:text-lg"
             style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
           >
             Your first video is{" "}
@@ -57,33 +62,33 @@ export default function Home() {
             </span>
           </p>
 
-          {/* Primary CTA — full-width pill */}
-          <Link
-            href="/upload"
-            className="flex w-full max-w-md h-14 min-h-[56px] items-center justify-center gap-2 rounded-full bg-[#FF7B5C] text-white font-bold text-base transition-colors hover:bg-[#FF6B4A] active:scale-[0.98]"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            Upload Your Drawing
-            <span className="text-lg">↑</span>
-          </Link>
-
-          {/* Legal micro-copy */}
-          <p
-            className="mt-4 text-center text-[13px] text-[#9B9B9B] max-w-sm"
-            style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
-          >
-            By uploading a drawing you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-[#6B6B6B]">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
-              Privacy Policy
+          {/* Primary CTA + legal — inline with hero content */}
+          <div className="w-full space-y-4">
+            <Link
+              href="/upload"
+              className={funnelPrimaryButtonClassName}
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              Upload Your Drawing
+              <span className="text-lg">↑</span>
             </Link>
-            .
-          </p>
-        </main>
-      </div>
+            <p
+              className="mx-auto max-w-sm text-center text-[13px] text-[#9B9B9B]"
+              style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
+            >
+              By uploading a drawing you agree to our{" "}
+              <Link href="/terms" className="underline hover:text-[#6B6B6B]">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
+      </main>
 
       {/* Before/After Slider — See What's Possible */}
       <section className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center px-5 py-12 bg-white">
@@ -326,7 +331,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-[#FF7B5C]/20 rounded-full blur-2xl -z-10" />
             <Link
               href="/upload"
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FF7B5C] text-white font-bold text-base transition-colors hover:bg-[#FF6B4A] active:scale-[0.98] shadow-lg"
+              className={`${funnelPrimaryButtonClassName} shadow-lg`}
               style={{ fontFamily: "var(--font-body)" }}
             >
               Upload Your Drawing

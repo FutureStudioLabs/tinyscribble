@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { CheckIcon } from "@phosphor-icons/react";
+import { ErrorStateIcon } from "@/components/ErrorStateIcon";
+import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
+import { SupportContact } from "@/components/SupportContact";
+import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { setPendingUpload } from "@/lib/upload-store";
 import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -48,47 +52,58 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFF8F5]">
-      <header className="flex items-center justify-between px-5 pt-6 pb-4">
+    <div className="flex h-[100vh] min-h-[100vh] flex-col bg-[#FFF8F5]">
+      <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
+        <HeaderUserAvatar />
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-5">
-        <div className="w-full max-w-md mx-auto text-center relative">
-          <div className="group inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF7B5C] to-[#FF9B7B] shadow-lg shadow-[#FF7B5C]/25 mb-6 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-[#FF7B5C]/30 hover:rotate-3">
-            <PencilSimpleIcon
-              size={28}
-              weight="bold"
-              color="white"
-              className="transition-transform duration-300 group-hover:scale-110"
-            />
+      <main className="flex min-h-0 flex-1 flex-col px-5">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex flex-1 flex-col items-center justify-center py-8">
+            <div className="relative mx-auto w-full max-w-md text-center">
+              <div className="group mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7B5C] to-[#FF9B7B] shadow-lg shadow-[#FF7B5C]/25 transition-all duration-300 hover:rotate-3 hover:scale-110 hover:shadow-xl hover:shadow-[#FF7B5C]/30">
+                <PencilSimpleIcon
+                  size={28}
+                  weight="bold"
+                  color="white"
+                  className="transition-transform duration-300 group-hover:scale-110"
+                />
+              </div>
+              <h1
+                className="mb-6 text-[40px] font-bold text-[#1A1A1A]"
+                style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
+              >
+                Upload a drawing to bring it to life
+              </h1>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/heic,image/webp"
+                className="hidden"
+                onChange={handleChange}
+              />
+              {error && (
+                <div className="mb-4 flex flex-col items-center space-y-3">
+                  <ErrorStateIcon size={44} />
+                  <p
+                    className="text-center text-sm text-red-600"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    {error}
+                  </p>
+                  <SupportContact errorSummary={error} />
+                </div>
+              )}
+            </div>
           </div>
-          <h1
-            className="text-[40px] font-bold text-[#1A1A1A] mb-6"
-            style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
-          >
-            Upload a drawing to bring it to life
-          </h1>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/heic,image/webp"
-            className="hidden"
-            onChange={handleChange}
-          />
-          {error && (
-            <p
-              className="mb-4 text-sm text-red-600"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              {error}
-            </p>
-          )}
-          <button
-            type="button"
+        </div>
+
+        <div className="mx-auto w-full max-w-md shrink-0 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+          <FunnelPrimaryButton
             onClick={handleClick}
             disabled={isUploading}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FF7B5C] text-white font-bold text-base transition-all duration-200 hover:bg-[#FF6B4A] active:scale-[0.98] disabled:opacity-90"
+            className="disabled:!opacity-90"
             style={{ fontFamily: "var(--font-body)" }}
           >
             {isUploading ? (
@@ -102,9 +117,9 @@ export default function UploadPage() {
                 <span className="text-lg">↑</span>
               </>
             )}
-          </button>
+          </FunnelPrimaryButton>
           <p
-            className="mt-6 text-center text-[13px] text-[#9B9B9B] max-w-sm mx-auto"
+            className="mx-auto max-w-sm text-center text-[13px] text-[#9B9B9B]"
             style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
           >
             By uploading a drawing you agree to our{" "}
