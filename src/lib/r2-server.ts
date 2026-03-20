@@ -89,3 +89,15 @@ export function isAllowedMediaKey(key: string): boolean {
     key.startsWith("videos/")
   );
 }
+
+/** When R2 returns generic octet-stream, browsers may not render <img> / <video>. */
+export function inferContentTypeFromKey(key: string): string | undefined {
+  const lower = key.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".mp4")) return "video/mp4";
+  if (lower.endsWith(".webm")) return "video/webm";
+  return undefined;
+}

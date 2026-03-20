@@ -1,4 +1,8 @@
-import { getObjectBuffer, isAllowedMediaKey } from "@/lib/r2-server";
+import {
+  getObjectBuffer,
+  inferContentTypeFromKey,
+  isAllowedMediaKey,
+} from "@/lib/r2-server";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -12,13 +16,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const { buffer, contentType } = await getObjectBuffer(key);
+    const raw = (contentType || "").toLowerCase();
+    const resolved =
+      raw && raw !== "application/octet-stream"
+        ? contentType
+        : inferContentTypeFromKey(key) || contentType || "application/octet-stream";
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": resolved,
         "Cache-Control": "private, max-age=3600",
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("api/media", key.slice(0, 80), err);
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 }
