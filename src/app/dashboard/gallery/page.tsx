@@ -255,7 +255,7 @@ export default function DashboardGalleryPage() {
                   href={item.previewUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="group overflow-hidden rounded-xl border border-[#E8E8E8] bg-white shadow-sm transition-shadow hover:shadow-md"
+                  className="group overflow-hidden rounded-xl border border-[#E8E8E8] bg-white"
                 >
                   <div className="relative aspect-square bg-[#FFF8F5]">
                     {video ? (

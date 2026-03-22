@@ -1,12 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { CheckIcon } from "@phosphor-icons/react";
 import { ErrorStateIcon } from "@/components/ErrorStateIcon";
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
 import { SupportContact } from "@/components/SupportContact";
+import {
+  FunnelBottomDock,
+  FunnelLegalDisclaimer,
+} from "@/components/funnel/FunnelBottomDock";
+import { FunnelUploadGreatExamples } from "@/components/funnel/FunnelUploadGreatExamples";
+import { FunnelUploadIconBadge } from "@/components/funnel/FunnelUploadIconBadge";
+import { FunnelStepIndicator } from "@/components/funnel/FunnelStepIndicator";
 import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { setPendingUpload } from "@/lib/upload-store";
 import { useRef, useEffect, useState } from "react";
@@ -52,88 +57,77 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="flex h-[100vh] min-h-[100vh] flex-col bg-[#FFF8F5]">
+    <div className="flex min-h-[100dvh] flex-col bg-[#FFF8F5]">
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
         <HeaderUserAvatar />
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col px-5">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex flex-1 flex-col items-center justify-center py-8">
-            <div className="relative mx-auto w-full max-w-md text-center">
-              <div className="group mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7B5C] to-[#FF9B7B] shadow-lg shadow-[#FF7B5C]/25 transition-all duration-300 hover:rotate-3 hover:scale-110 hover:shadow-xl hover:shadow-[#FF7B5C]/30">
-                <PencilSimpleIcon
-                  size={28}
-                  weight="bold"
-                  color="white"
-                  className="transition-transform duration-300 group-hover:scale-110"
+      <FunnelStepIndicator step={1} className="shrink-0 px-5 pb-2" />
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        <main className="flex min-h-0 flex-1 flex-col px-5">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div className="flex flex-1 flex-col items-center justify-center py-8">
+              <div className="relative mx-auto w-full max-w-md text-center">
+                <FunnelUploadIconBadge className="mx-auto" />
+                <h1
+                  className="mb-3 text-[32px] font-bold text-[#1A1A1A]"
+                  style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
+                >
+                  Upload a drawing to
+                  <br />
+                  bring it to life
+                </h1>
+                <FunnelUploadGreatExamples className="mb-6" />
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/heic,image/webp"
+                  className="hidden"
+                  onChange={handleChange}
                 />
+                {error && (
+                  <div className="mb-4 flex flex-col items-center space-y-3">
+                    <ErrorStateIcon size={44} />
+                    <p
+                      className="text-center text-sm text-red-600"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      {error}
+                    </p>
+                    <SupportContact errorSummary={error} />
+                  </div>
+                )}
               </div>
-              <h1
-                className="mb-6 text-[40px] font-bold text-[#1A1A1A]"
-                style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
-              >
-                Upload a drawing to bring it to life
-              </h1>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/heic,image/webp"
-                className="hidden"
-                onChange={handleChange}
-              />
-              {error && (
-                <div className="mb-4 flex flex-col items-center space-y-3">
-                  <ErrorStateIcon size={44} />
-                  <p
-                    className="text-center text-sm text-red-600"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    {error}
-                  </p>
-                  <SupportContact errorSummary={error} />
-                </div>
-              )}
             </div>
           </div>
-        </div>
+        </main>
 
-        <div className="mx-auto w-full max-w-md shrink-0 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
-          <FunnelPrimaryButton
-            onClick={handleClick}
-            disabled={isUploading}
-            className="disabled:!opacity-90"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            {isUploading ? (
-              <>
-                <CheckIcon size={24} weight="bold" />
-                Uploading…
-              </>
-            ) : (
-              <>
-                Upload Your Drawing
-                <span className="text-lg">↑</span>
-              </>
-            )}
-          </FunnelPrimaryButton>
-          <p
-            className="mx-auto max-w-sm text-center text-[13px] text-[#9B9B9B]"
-            style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
-          >
-            By uploading a drawing you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-[#6B6B6B]">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
-              Privacy Policy
-            </Link>
-            .
-          </p>
-        </div>
-      </main>
+        <FunnelBottomDock tone="cream" className="px-5">
+          <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+            <FunnelPrimaryButton
+              onClick={handleClick}
+              disabled={isUploading}
+              className="w-full disabled:!opacity-90"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {isUploading ? (
+                <>
+                  <CheckIcon size={24} weight="bold" />
+                  Uploading…
+                </>
+              ) : (
+                <>
+                  Upload Your Drawing
+                  <span className="text-lg">↑</span>
+                </>
+              )}
+            </FunnelPrimaryButton>
+            <FunnelLegalDisclaimer />
+          </div>
+        </FunnelBottomDock>
+      </div>
     </div>
   );
 }

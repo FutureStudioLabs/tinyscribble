@@ -4,15 +4,20 @@ import { ErrorStateIcon } from "@/components/ErrorStateIcon";
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
 import { SupportContact } from "@/components/SupportContact";
+import {
+  FunnelBottomDock,
+  FunnelLegalDisclaimer,
+} from "@/components/funnel/FunnelBottomDock";
+import { FunnelStepIndicator } from "@/components/funnel/FunnelStepIndicator";
 import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { formatErrorForUser } from "@/lib/format-user-error";
 import { uploadFormDataWithProgress } from "@/lib/upload-with-progress";
 import { getPendingUpload, setR2Key } from "@/lib/upload-store";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const UPLOAD_MESSAGES = [
-  "Uploading to Cloudflare…",
+  "Preparing your upload…",
   "Saving your drawing…",
   "Almost there…",
   "Securing your file…",
@@ -27,17 +32,22 @@ export default function LoadingPage() {
   const [retryToken, setRetryToken] = useState(0);
   const uploadStartedRef = useRef(false);
 
-  // Derive during render; redirect in effect when missing
-  const upload = typeof window !== "undefined" ? getPendingUpload() : null;
-  const hasUpload = !!upload;
+  /** SSR + first client paint must match; read in-memory upload only after hydration. */
+  const [upload, setUpload] = useState<ReturnType<typeof getPendingUpload>>(null);
+  const [uploadReady, setUploadReady] = useState(false);
+  const hasUpload = uploadReady && !!upload;
+
+  useLayoutEffect(() => {
+    setUpload(getPendingUpload());
+    setUploadReady(true);
+  }, []);
 
   useEffect(() => {
-    if (!upload) {
-      router.replace("/upload");
-    }
-  }, [upload, router]);
+    if (!uploadReady || upload) return;
+    router.replace("/upload");
+  }, [uploadReady, upload, router]);
 
-  // Upload to Cloudflare R2; progress bar completes when response arrives
+  // Upload to storage (R2); progress bar completes when response arrives
   const uploadCompleteRef = useRef(false);
   useEffect(() => {
     if (!hasUpload || uploadStartedRef.current) return;
@@ -82,7 +92,7 @@ export default function LoadingPage() {
     setRetryToken((t) => t + 1);
   }
 
-  if (!upload) {
+  if (!uploadReady || !upload) {
     return (
       <div className="flex h-[100vh] min-h-[100vh] flex-col items-center justify-center bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
         <div className="animate-pulse text-[#6B6B6B]">Loading…</div>
@@ -97,83 +107,68 @@ export default function LoadingPage() {
         <HeaderUserAvatar />
       </header>
 
-      <main className="flex flex-1 min-h-0 flex-col px-5">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-visible">
-          <div className="flex flex-1 flex-col items-center justify-center py-6">
-            <div className="w-full max-w-md mx-auto text-center overflow-visible">
-            {/* Sparkle (happy path) or error icon */}
-            {uploadError ? (
-              <ErrorStateIcon className="mb-4" size={56} />
-            ) : (
+      <FunnelStepIndicator step={2} className="shrink-0 px-5 pb-2" />
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        <main className="flex min-h-0 flex-1 flex-col px-5">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-visible">
+            <div className="flex flex-1 flex-col items-center justify-center py-6">
+              <div className="mx-auto w-full max-w-md overflow-visible text-center">
+            {uploadError ? <ErrorStateIcon className="mb-4" size={56} /> : null}
+
+            {/* Preview only after upload succeeds — hidden while upload is in progress */}
+            {uploadComplete && !uploadError && upload?.previewUrl ? (
               <div
-                className="mb-4 animate-pulse"
+                className="relative mx-auto mb-6 aspect-[9/16] w-full max-w-[min(100%,calc(54dvh*9/16))] overflow-hidden rounded-2xl"
                 style={{
-                  animation: "fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) 400ms forwards",
+                  animation: "scale-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards",
                   opacity: 0,
                 }}
               >
-                <span className="text-4xl">✨</span>
-              </div>
-            )}
-
-            {/* Drawing preview card with thin animated gradient border */}
-            <div
-              className="relative mx-auto mb-6 w-full max-w-[min(100%,calc(85dvh*9/16))] aspect-[9/16] rounded-[24px] overflow-hidden"
-              style={{
-                animation: "scale-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards, ai-glow 2.5s ease-in-out infinite",
-                opacity: 0,
-              }}
-            >
-              {/* Thin gradient border - animates via background-position, stays within bounds */}
-              <div
-                className="absolute inset-0 rounded-[24px] p-[3px]"
-                style={{
-                  background: "linear-gradient(90deg, #FF7B5C, #FF9E6C, #4ECDC4, #FF9E6C, #FF7B5C)",
-                  backgroundSize: "300% 100%",
-                  animation: "gradient-border 3s ease infinite",
-                }}
-              >
-                <div className="w-full h-full rounded-[21px] overflow-hidden bg-[#FFF8F5]">
-                  {upload?.previewUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
+                <div
+                  className="absolute inset-0 rounded-2xl p-[3px]"
+                  style={{
+                    background: "linear-gradient(90deg, #FF7B5C, #FF9E6C, #4ECDC4, #FF9E6C, #FF7B5C)",
+                    backgroundSize: "300% 100%",
+                    animation: "gradient-border 3s ease infinite",
+                  }}
+                >
+                  <div className="h-full w-full overflow-hidden rounded-[13px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={upload.previewUrl}
                       alt="Your drawing"
-                      className="h-full w-full object-contain bg-[#FFF8F5]"
+                      className="h-full w-full object-cover"
                     />
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : null}
 
-            {/* Headline */}
-            <h1
-              className="text-[24px] sm:text-[28px] font-bold text-[#1A1A1A] mb-2"
-              style={{
-                fontFamily: "var(--font-fredoka)",
-                lineHeight: 1.2,
-                animation: "fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards",
-                opacity: 0,
-              }}
-            >
-              {uploadError
-                ? "Couldn’t upload your drawing"
-                : uploadComplete
-                  ? "Your drawing is ready!"
-                  : "Uploading to Cloudflare…"}
-            </h1>
-
-            {/* Subtext when complete */}
-            {uploadComplete && !uploadError && (
+            {uploadComplete && !uploadError ? (
               <p
-                className="text-[#6B6B6B] text-base mb-6"
+                className="mb-6 text-base text-[#6B6B6B]"
                 style={{
                   fontFamily: "var(--font-body)",
                   lineHeight: 1.5,
+                  animation: "fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards",
+                  opacity: 0,
                 }}
               >
                 Ready to bring it to life?
               </p>
+            ) : (
+              <h1
+                className="mb-2 text-[32px] font-bold text-[#1A1A1A]"
+                style={{
+                  fontFamily: "var(--font-fredoka)",
+                  lineHeight: 1.2,
+                  animation: "fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards",
+                  opacity: 0,
+                }}
+              >
+                {uploadError ? "Couldn’t upload your drawing" : "Uploading your drawing…"}
+              </h1>
             )}
 
             {uploadError && (
@@ -228,42 +223,51 @@ export default function LoadingPage() {
                 </div>
               </>
             )}
+              </div>
             </div>
           </div>
-        </div>
+        </main>
 
-        {/* Primary actions pinned to bottom of viewport */}
-        {uploadComplete && !uploadError && (
-          <div className="shrink-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
-            <FunnelPrimaryButton
-              onClick={() => router.push("/generate")}
-              className="mx-auto max-w-md"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Bring your image to life
-            </FunnelPrimaryButton>
-          </div>
+        {(uploadComplete || uploadError) && (
+          <FunnelBottomDock className="px-5">
+            <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+              {uploadComplete && !uploadError && (
+                <>
+                  <FunnelPrimaryButton
+                    type="button"
+                    onClick={() => router.push("/generate")}
+                    className="w-full"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    Bring your image to life
+                  </FunnelPrimaryButton>
+                  <FunnelLegalDisclaimer />
+                </>
+              )}
+              {uploadError && (
+                <>
+                  <FunnelPrimaryButton
+                    type="button"
+                    onClick={handleRetryUpload}
+                    className="w-full"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    Try again
+                  </FunnelPrimaryButton>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/upload")}
+                    className="text-center text-sm text-[#6B6B6B] underline"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    Choose a different file
+                  </button>
+                </>
+              )}
+            </div>
+          </FunnelBottomDock>
         )}
-
-        {uploadError && (
-          <div className="shrink-0 flex w-full max-w-md mx-auto flex-col gap-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
-            <FunnelPrimaryButton
-              onClick={handleRetryUpload}
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Try again
-            </FunnelPrimaryButton>
-            <button
-              type="button"
-              onClick={() => router.push("/upload")}
-              className="text-sm text-[#6B6B6B] underline"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Choose a different file
-            </button>
-          </div>
-        )}
-      </main>
+      </div>
     </div>
   );
 }

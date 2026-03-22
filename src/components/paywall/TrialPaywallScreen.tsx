@@ -22,7 +22,6 @@ import {
   useCallback,
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -60,14 +59,18 @@ export function TrialPaywallScreen() {
   const restoreHeadingId = useId();
   const restoreDescId = useId();
 
-  const billingDateLabel = useMemo(() => {
+  /** Set after mount so server HTML matches first client paint (avoids TZ hydration mismatch). */
+  const [billingDateLabel, setBillingDateLabel] = useState("");
+  useEffect(() => {
     const d = new Date();
     d.setDate(d.getDate() + 3);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    setBillingDateLabel(
+      d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    );
   }, []);
 
   const footerLine =
@@ -162,7 +165,7 @@ export function TrialPaywallScreen() {
       style={{ fontFamily: "var(--font-body)" }}
     >
       {/* Top bar */}
-      <header className="flex shrink-0 items-center justify-between px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="flex shrink-0 items-center justify-between px-4 pb-1.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <Link
           href={paywallExitPath("back")}
           className="flex h-11 w-11 items-center justify-center rounded-full text-[#1A1A1A] transition-colors hover:bg-black/5"
@@ -188,10 +191,10 @@ export function TrialPaywallScreen() {
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
         <main
           ref={mainRef}
-          className="min-h-0 flex-1 overflow-y-auto px-5 pb-4"
+          className="min-h-0 flex-1 overflow-y-auto px-5 pb-2"
         >
         <h1
-          className="mb-8 text-center text-[22px] font-bold leading-tight sm:text-[24px]"
+          className="mb-5 text-center text-[19px] font-bold leading-tight sm:mb-6 sm:text-[21px]"
           style={{ fontFamily: "var(--font-fredoka)" }}
         >
           <span className="block">Start your 3-day</span>
@@ -199,65 +202,65 @@ export function TrialPaywallScreen() {
         </h1>
 
         {/* Timeline — solid orange → orange → black circles; peach bars; gray tail (matches reference) */}
-        <div className="mb-8 px-3 sm:px-4">
+        <div className="mb-5 px-2 sm:mb-6 sm:px-3">
           <ul className="flex flex-col">
-            <li className="flex gap-4">
-              <div className="flex w-11 shrink-0 flex-col items-center">
+            <li className="flex gap-3">
+              <div className="flex w-9 shrink-0 flex-col items-center">
                 <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF7B5C]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FF7B5C]"
                   aria-hidden
                 >
-                  <LockOpenIcon size={22} weight="regular" className="text-white" />
+                  <LockOpenIcon size={18} weight="regular" className="text-white" />
                 </div>
                 <div
-                  className="mt-0 h-12 w-[12px] shrink-0 rounded-none bg-[#EDD5C8]"
+                  className="mt-0 h-8 w-[10px] shrink-0 rounded-none bg-[#EDD5C8]"
                   aria-hidden
                 />
               </div>
-              <div className="min-w-0 flex-1 pb-3 pt-1.5">
-                <p className="text-[15px] font-bold">Today</p>
-                <p className="mt-0.5 text-[14px] leading-snug text-[#6B6B6B]">
+              <div className="min-w-0 flex-1 pb-2 pt-0.5">
+                <p className="text-[14px] font-bold leading-tight">Today</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-[#6B6B6B]">
                   Unlock video creation and everything TinyScribble offers for your family.
                 </p>
               </div>
             </li>
-            <li className="flex gap-4">
-              <div className="flex w-11 shrink-0 flex-col items-center">
+            <li className="flex gap-3">
+              <div className="flex w-9 shrink-0 flex-col items-center">
                 <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF7B5C]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FF7B5C]"
                   aria-hidden
                 >
-                  <BellIcon size={22} weight="regular" className="text-white" />
+                  <BellIcon size={18} weight="regular" className="text-white" />
                 </div>
                 <div
-                  className="mt-0 h-12 w-[12px] shrink-0 rounded-none bg-[#EDD5C8]"
+                  className="mt-0 h-8 w-[10px] shrink-0 rounded-none bg-[#EDD5C8]"
                   aria-hidden
                 />
               </div>
-              <div className="min-w-0 flex-1 pb-3 pt-1.5">
-                <p className="text-[15px] font-bold">In 2 days — Reminder</p>
-                <p className="mt-0.5 text-[14px] leading-snug text-[#6B6B6B]">
+              <div className="min-w-0 flex-1 pb-2 pt-0.5">
+                <p className="text-[14px] font-bold leading-tight">In 2 days — Reminder</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-[#6B6B6B]">
                   We&apos;ll email you that your trial is ending soon — cancel anytime before then.
                 </p>
               </div>
             </li>
-            <li className="flex gap-4">
-              <div className="flex w-11 shrink-0 flex-col items-center">
+            <li className="flex gap-3">
+              <div className="flex w-9 shrink-0 flex-col items-center">
                 <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A1A1A]"
                   aria-hidden
                 >
-                  <CrownIcon size={22} weight="regular" className="text-white" />
+                  <CrownIcon size={18} weight="regular" className="text-white" />
                 </div>
                 <div
-                  className="mt-0 h-7 w-[12px] shrink-0 rounded-b-lg bg-[#C4C4C4]"
+                  className="mt-0 h-5 w-[10px] shrink-0 rounded-b-md bg-[#C4C4C4]"
                   aria-hidden
                 />
               </div>
-              <div className="min-w-0 flex-1 pt-1.5">
-                <p className="text-[15px] font-bold">In 3 days — Billing starts</p>
-                <p className="mt-0.5 text-[14px] leading-snug text-[#6B6B6B]">
-                  You&apos;ll be charged on {billingDateLabel} unless you cancel anytime before.
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p className="text-[14px] font-bold leading-tight">In 3 days — Billing starts</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-[#6B6B6B]">
+                  You&apos;ll be charged on {billingDateLabel || "—"} unless you cancel anytime before.
                 </p>
               </div>
             </li>
@@ -265,36 +268,36 @@ export function TrialPaywallScreen() {
         </div>
 
         {/* Plan cards */}
-        <p className="mb-3 text-center text-[13px] font-semibold uppercase tracking-wide text-[#9B9B9B]">
+        <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[#9B9B9B]">
           Choose your plan
         </p>
-        <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="mb-2 grid grid-cols-2 gap-2 sm:gap-2.5">
           <button
             type="button"
             onClick={() => setPlan("monthly")}
-            className={`relative rounded-2xl border-2 p-4 text-left transition-all ${
+            className={`relative rounded-xl border-2 p-3 text-left transition-all sm:rounded-2xl sm:p-3.5 ${
               plan === "monthly"
                 ? "border-[#1A1A1A] bg-[#FAFAFA] shadow-sm"
                 : "border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
             }`}
           >
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-1.5">
               <div>
-                <p className="text-[15px] font-bold">{COPY.monthly.label}</p>
-                <p className="mt-1 text-[18px] font-bold">
+                <p className="text-[13px] font-bold sm:text-[14px]">{COPY.monthly.label}</p>
+                <p className="mt-0.5 text-[16px] font-bold sm:text-[17px]">
                   {COPY.monthly.display}
-                  <span className="text-[14px] font-semibold text-[#6B6B6B]">
+                  <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[13px]">
                     {COPY.monthly.suffix}
                   </span>
                 </p>
               </div>
               <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 sm:h-6 sm:w-6 ${
                   plan === "monthly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
                 }`}
               >
                 {plan === "monthly" ? (
-                  <CheckIcon size={14} weight="bold" className="text-white" />
+                  <CheckIcon size={12} weight="bold" className="text-white" />
                 ) : null}
               </span>
             </div>
@@ -303,33 +306,35 @@ export function TrialPaywallScreen() {
           <button
             type="button"
             onClick={() => setPlan("yearly")}
-            className={`relative rounded-2xl border-2 p-4 pb-5 text-left transition-all ${
+            className={`relative rounded-xl border-2 p-3 pb-4 text-left transition-all sm:rounded-2xl sm:p-3.5 sm:pb-4 ${
               plan === "yearly"
                 ? "border-[#1A1A1A] bg-[#FAFAFA] shadow-sm"
                 : "border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
             }`}
           >
-            <span className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1A1A1A] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1A1A1A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:-top-2.5 sm:px-2.5 sm:text-[10px]">
               3 days free
             </span>
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-1.5">
               <div>
-                <p className="text-[15px] font-bold">{COPY.yearly.label}</p>
-                <p className="mt-1 text-[18px] font-bold">
+                <p className="text-[13px] font-bold sm:text-[14px]">{COPY.yearly.label}</p>
+                <p className="mt-0.5 text-[16px] font-bold sm:text-[17px]">
                   {COPY.yearly.display}
-                  <span className="text-[14px] font-semibold text-[#6B6B6B]">
+                  <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[13px]">
                     {COPY.yearly.suffix}
                   </span>
                 </p>
-                <p className="mt-1 text-[11px] font-medium text-[#9B9B9B]">{COPY.yearly.sub}</p>
+                <p className="mt-0.5 text-[10px] font-medium text-[#9B9B9B] sm:mt-1 sm:text-[11px]">
+                  {COPY.yearly.sub}
+                </p>
               </div>
               <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 sm:h-6 sm:w-6 ${
                   plan === "yearly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
                 }`}
               >
                 {plan === "yearly" ? (
-                  <CheckIcon size={14} weight="bold" className="text-white" />
+                  <CheckIcon size={12} weight="bold" className="text-white" />
                 ) : null}
               </span>
             </div>
@@ -338,13 +343,16 @@ export function TrialPaywallScreen() {
         </main>
 
         {/* Pinned bottom: CTA + legal (matches app flow pages) */}
-        <div className="shrink-0 border-t border-[#F0F0F0] px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <p className="mb-3 text-center text-[15px] font-semibold text-[#2E7D32]">
-            ✓ No Payment Due Now
+        <div className="shrink-0 border-t border-[#F0F0F0] px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p
+            className="mb-2 text-center text-[12px] leading-snug text-[#6B6B6B] sm:text-[13px]"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            3 videos &amp; 20 scenes included
           </p>
           {checkoutError ? (
             <p
-              className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-center text-[13px] font-medium text-red-800"
+              className="mb-2 rounded-lg bg-red-50 px-3 py-1.5 text-center text-[12px] font-medium text-red-800 sm:mb-2.5 sm:text-[13px]"
               role="alert"
             >
               {checkoutError}
@@ -353,12 +361,14 @@ export function TrialPaywallScreen() {
           <PaywallPrimaryButton
             disabled={checkoutLoading}
             onClick={() => void handleStartTrial()}
-            className="mb-3"
+            className="mb-2 h-12 min-h-[48px] text-[15px] sm:mb-2.5"
           >
-            {checkoutLoading ? "Redirecting…" : "Start My 3-Day Free Trial"}
+            {checkoutLoading ? "Redirecting…" : "Start my 3-day trial for $0"}
           </PaywallPrimaryButton>
-          <p className="mb-4 text-center text-[12px] leading-relaxed text-[#9B9B9B]">{footerLine}</p>
-          <p className="text-center text-[12px] text-[#9B9B9B]">
+          <p className="mb-2 text-center text-[11px] leading-snug text-[#9B9B9B] sm:mb-2.5 sm:text-[12px]">
+            {footerLine}
+          </p>
+          <p className="text-center text-[11px] text-[#9B9B9B] sm:text-[12px]">
             <Link href="/terms" className="underline underline-offset-2 hover:text-[#6B6B6B]">
               Terms
             </Link>

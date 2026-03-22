@@ -234,7 +234,7 @@ export default function StyleguidePage() {
               <p className="mb-3 text-sm font-semibold text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
                 Gradient border (image frame)
               </p>
-              <div className="h-24 w-24 rounded-[16px] p-[3px] shadow-md" style={{ background: "linear-gradient(90deg, #FF7B5C, #FF9E6C, #4ECDC4, #FF9E6C, #FF7B5C)", backgroundSize: "300% 100%", animation: "gradient-border 3s ease infinite" }}>
+              <div className="h-24 w-24 rounded-[16px] p-[3px]" style={{ background: "linear-gradient(90deg, #FF7B5C, #FF9E6C, #4ECDC4, #FF9E6C, #FF7B5C)", backgroundSize: "300% 100%", animation: "gradient-border 3s ease infinite" }}>
                 <div className="h-full w-full rounded-[13px] bg-[#FFF8F5]" />
               </div>
             </div>
@@ -256,7 +256,6 @@ export default function StyleguidePage() {
             <li><code className="font-mono text-xs">fade-in</code> — 300ms, entrances</li>
             <li><code className="font-mono text-xs">scale-in</code> — 300ms, cards</li>
             <li><code className="font-mono text-xs">gradient-border</code> — shifting gradient on borders</li>
-            <li><code className="font-mono text-xs">ai-glow</code> — optional pulsing shadow</li>
           </ul>
         </section>
 
