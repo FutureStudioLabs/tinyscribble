@@ -19,6 +19,38 @@ function isVideoKey(key: string): boolean {
   return key.startsWith("videos/") || /\.mp4$/i.test(key);
 }
 
+/** Video grid cell — first frame can be slow over /api/media; show spinner until ready. */
+function GalleryVideoPreview({ previewUrl }: { previewUrl: string }) {
+  const [thumbReady, setThumbReady] = useState(false);
+
+  return (
+    <>
+      <video
+        src={previewUrl}
+        className="h-full w-full object-cover"
+        muted
+        playsInline
+        preload="metadata"
+        onLoadedData={() => setThumbReady(true)}
+        onError={() => setThumbReady(true)}
+      />
+      {!thumbReady ? (
+        <span
+          className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 shadow-sm ring-1 ring-black/[0.06]"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="sr-only">Loading preview</span>
+          <span
+            className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#F28B66] border-t-transparent"
+            aria-hidden
+          />
+        </span>
+      ) : null}
+    </>
+  );
+}
+
 /** e.g. "15 Mar" */
 function formatGalleryDate(iso: string): string {
   try {
@@ -253,13 +285,7 @@ export default function DashboardGalleryPage() {
                     >
                       <div className="relative h-full w-full">
                         {video ? (
-                          <video
-                            src={item.previewUrl}
-                            className="h-full w-full object-cover"
-                            muted
-                            playsInline
-                            preload="metadata"
-                          />
+                          <GalleryVideoPreview previewUrl={item.previewUrl} />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element -- proxied same-origin URL from R2
                           <img
