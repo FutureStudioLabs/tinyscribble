@@ -40,6 +40,11 @@ export function CreateVideoCta({ activeVariant }: Props) {
           subscriptionStatus: data.subscriptionStatus ?? null,
           trialVideoQuota: data.trialVideoQuota ?? null,
           trialImageQuota: data.trialImageQuota ?? null,
+          trialEndsAt: data.trialEndsAt ?? null,
+          billingPeriodEndsAt: data.billingPeriodEndsAt ?? null,
+          paidVideoQuota: data.paidVideoQuota ?? null,
+          paidImageQuota: data.paidImageQuota ?? null,
+          planInterval: data.planInterval ?? null,
         });
       } catch {
         if (!cancelled) {
@@ -50,6 +55,11 @@ export function CreateVideoCta({ activeVariant }: Props) {
             subscriptionStatus: null,
             trialVideoQuota: null,
             trialImageQuota: null,
+            trialEndsAt: null,
+            billingPeriodEndsAt: null,
+            paidVideoQuota: null,
+            paidImageQuota: null,
+            planInterval: null,
           });
         }
       }

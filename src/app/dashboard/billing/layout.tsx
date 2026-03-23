@@ -9,7 +9,7 @@ export default function DashboardBillingLayout({ children }: { children: React.R
         <Logo />
         <HeaderUserAvatar />
       </header>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col bg-[#FCF9F7]">{children}</div>
     </>
   );
 }

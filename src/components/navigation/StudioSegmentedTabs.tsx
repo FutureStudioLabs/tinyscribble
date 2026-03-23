@@ -22,19 +22,18 @@ export function StudioSegmentedTabs() {
   const active = activeIndexForPath(pathname);
 
   return (
-    <div className="relative z-0 mx-auto w-full max-w-md shrink-0 px-5 pt-3 pb-4">
+    <div className="relative z-0 w-full min-w-0 shrink-0 bg-white pb-5 pt-4">
       <div
-        className="relative isolate flex w-full rounded-2xl bg-[#EDE5E0]/90 p-[5px] shadow-inner shadow-black/[0.04]"
+        className="relative isolate flex w-full rounded-[14px] bg-[#F5F5F5] p-1"
         role="tablist"
         aria-label="Dashboard sections"
       >
-        {/* Sliding pill — hidden on /dashboard/billing (not an Upload/Gallery tab) */}
         <span
           aria-hidden
-          className={`pointer-events-none absolute top-[5px] h-[calc(100%-10px)] w-[calc(50%-7px)] rounded-[12px] bg-white shadow-md shadow-[#FF7B5C]/12 ring-1 ring-black/[0.04] transition-[left,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          className={`pointer-events-none absolute top-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-[11px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-[left,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             active === null ? "opacity-0" : "opacity-100"
           }`}
-          style={{ left: active === 1 ? "calc(50% + 1.5px)" : 5 }}
+          style={{ left: active === 1 ? "calc(50% + 0px)" : 4 }}
         />
         {TABS.map((tab, i) => {
           const isActive = active !== null && i === active;
@@ -44,8 +43,8 @@ export function StudioSegmentedTabs() {
               href={tab.href}
               role="tab"
               aria-selected={isActive}
-              className={`relative z-10 flex flex-1 items-center justify-center rounded-[12px] py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                isActive ? "text-[#1A1A1A]" : "text-[#8A8A8A] hover:text-[#5C5C5C]"
+              className={`relative z-10 flex flex-1 items-center justify-center rounded-[11px] py-3 text-[15px] font-bold transition-colors duration-200 ${
+                isActive ? "text-[#1A1A1A]" : "text-[#AAAAAA] hover:text-[#777777]"
               }`}
               style={{ fontFamily: "var(--font-body)" }}
             >

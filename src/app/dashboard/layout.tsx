@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#FFF8F5]">
+    <div className="flex min-h-[100dvh] flex-col bg-white">
       {children}
     </div>
   );

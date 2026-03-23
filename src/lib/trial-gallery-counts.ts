@@ -34,3 +34,44 @@ export async function countGalleryGeneratedForUser(
   }
   return count ?? 0;
 }
+
+/** Counts in the current Stripe billing period (epoch ms inclusive). */
+export async function countGalleryVideosForUserSince(
+  supabase: SupabaseClient,
+  userId: string,
+  sinceMs: number
+): Promise<number> {
+  const since = new Date(sinceMs).toISOString();
+  const { count, error } = await supabase
+    .from("gallery_items")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .like("r2_key", "videos/%")
+    .gte("created_at", since);
+
+  if (error) {
+    console.error("gallery count (videos since)", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+export async function countGalleryGeneratedForUserSince(
+  supabase: SupabaseClient,
+  userId: string,
+  sinceMs: number
+): Promise<number> {
+  const since = new Date(sinceMs).toISOString();
+  const { count, error } = await supabase
+    .from("gallery_items")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .like("r2_key", "generated/%")
+    .gte("created_at", since);
+
+  if (error) {
+    console.error("gallery count (generated since)", error);
+    return 0;
+  }
+  return count ?? 0;
+}

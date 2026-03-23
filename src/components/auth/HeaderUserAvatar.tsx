@@ -26,11 +26,17 @@ type HeaderUserAvatarProps = {
   /** When true and user is not signed in, show the same Log in control as the marketing header. */
   showLoginWhenAnonymous?: boolean;
   className?: string;
+  /** Dashboard-style coral circle with hamburger (menu content unchanged). */
+  trigger?: "initials" | "hamburger";
+  /** Hide the small trial quota pill (e.g. when quota shows in the hero card). */
+  hideTrialQuotaBadge?: boolean;
 };
 
 export function HeaderUserAvatar({
   showLoginWhenAnonymous = false,
   className = "",
+  trigger = "initials",
+  hideTrialQuotaBadge = false,
 }: HeaderUserAvatarProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -127,9 +133,11 @@ export function HeaderUserAvatar({
   const email = user.email ?? "";
   const label = initialsFromEmail(email);
 
+  const isHamburger = trigger === "hamburger";
+
   return (
     <div className={`relative flex items-center gap-2 ${className}`} ref={wrapRef}>
-      {trialQuota != null ? (
+      {!hideTrialQuotaBadge && trialQuota != null ? (
         <span
           className="max-w-[min(100vw-8rem,10rem)] shrink truncate rounded-full border border-[#E8E8E8] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold leading-tight text-[#4A4A4A] shadow-sm sm:max-w-none sm:px-3 sm:py-1.5 sm:text-xs"
           style={{ fontFamily: "var(--font-body)" }}
@@ -144,12 +152,26 @@ export function HeaderUserAvatar({
           setMenuOpen((o) => !o);
           if (user?.id) loadTrialQuota();
         }}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF7B5C] to-[#FF9E6C] text-sm font-bold text-white shadow-md ring-2 ring-white/90 transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7B5C] focus-visible:ring-offset-2"
+        className={`flex shrink-0 items-center justify-center rounded-full bg-[#F28B66] text-white shadow-md shadow-[#F28B66]/35 transition hover:bg-[#E87A5A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7B5C] focus-visible:ring-offset-2 ${
+          isHamburger ? "h-11 w-11 flex-col gap-[5px] p-0" : "h-10 w-10 bg-gradient-to-br from-[#FF7B5C] to-[#FF9E6C] text-sm font-bold ring-2 ring-white/90 hover:opacity-95"
+        }`}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
         aria-label="Account menu"
       >
-        <span aria-hidden>{label.slice(0, 2)}</span>
+        {isHamburger ? (
+          <>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="block h-0.5 w-[15px] rounded-sm bg-white"
+                aria-hidden
+              />
+            ))}
+          </>
+        ) : (
+          <span aria-hidden>{label.slice(0, 2)}</span>
+        )}
       </button>
 
       {menuOpen ? (
