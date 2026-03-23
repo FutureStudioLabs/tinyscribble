@@ -552,9 +552,10 @@ export function GenerateVideoPageClient() {
 
                 <div className="mx-auto mb-6 aspect-[9/16] w-full max-w-[min(100%,calc(85dvh*9/16))] overflow-hidden rounded-2xl border border-white/80 bg-black">
                   <video
-                    src={videoMediaUrl}
+                    src={videoMediaUrl ?? undefined}
                     controls
                     playsInline
+                    preload="metadata"
                     className="h-full w-full object-contain bg-black"
                   />
                 </div>

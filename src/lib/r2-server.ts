@@ -1,5 +1,6 @@
 import {
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -79,6 +80,39 @@ export async function getObjectBuffer(key: string): Promise<{
     buffer: Buffer.from(bytes),
     contentType: out.ContentType || "application/octet-stream",
   };
+}
+
+/** Object size + type (for HTTP Range / video on iOS Safari). */
+export async function headObject(key: string): Promise<{
+  contentLength: number;
+  contentType: string;
+}> {
+  const client = getR2Client();
+  const out = await client.send(
+    new HeadObjectCommand({ Bucket: R2_BUCKET_NAME!, Key: key })
+  );
+  return {
+    contentLength: out.ContentLength ?? 0,
+    contentType: out.ContentType || "application/octet-stream",
+  };
+}
+
+export async function getObjectBufferRange(
+  key: string,
+  start: number,
+  end: number
+): Promise<Buffer> {
+  const client = getR2Client();
+  const out = await client.send(
+    new GetObjectCommand({
+      Bucket: R2_BUCKET_NAME!,
+      Key: key,
+      Range: `bytes=${start}-${end}`,
+    })
+  );
+  if (!out.Body) throw new Error("Empty R2 object body");
+  const bytes = await out.Body.transformToByteArray();
+  return Buffer.from(bytes);
 }
 
 /** Allowed key prefixes for /api/media proxy */
