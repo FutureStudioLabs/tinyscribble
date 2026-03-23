@@ -18,6 +18,10 @@ So you need:
 
 If **new** rows 404 on Vercel but **old** rows work, the usual explanation is:
 
+### Different Cloudflare account / bucket (intentional)
+
+Your **local** `.env` may point at **your** R2 bucket (your account). **Production** (e.g. Vercel) uses **another** bucket, often another Cloudflare account. Files you upload or generate **only** exist in the bucket that received the write. There is no automatic sync between accounts — align env for the environment you’re testing, or copy objects into the prod bucket when debugging.
+
 ### Local dev + production Supabase (most common)
 
 You run the app on **localhost** with:
@@ -51,3 +55,10 @@ Also confirm **Vercel → Project → Settings → Environment Variables**: ever
 ## Not a gallery query bug
 
 The keys in your 404 URLs should match `gallery_items.r2_key`. The failure is **object missing in the R2 bucket the server is configured to use**, not bad SQL or `encodeURIComponent` for normal ASCII keys.
+
+## Works on localhost but not on Vercel (large videos)
+
+Vercel serverless responses are limited to **~4.5MB** per response body. `/api/media` streams full objects from R2 (no full-file buffer) so **MP4s larger than that** can load in production. If you still see failures:
+
+- Confirm the object exists in the **same** R2 bucket as Vercel’s `R2_*` env (see above).
+- Range (`206`) responses use small chunks and are unaffected by the size cap.

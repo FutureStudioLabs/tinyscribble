@@ -5,6 +5,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Readable } from "node:stream";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
@@ -113,6 +114,26 @@ export async function getObjectBufferRange(
   if (!out.Body) throw new Error("Empty R2 object body");
   const bytes = await out.Body.transformToByteArray();
   return Buffer.from(bytes);
+}
+
+/**
+ * Stream full object without buffering (required on Vercel: serverless responses are capped ~4.5MB).
+ * Range requests use {@link getObjectBufferRange} instead.
+ */
+export async function getObjectWebStream(key: string): Promise<{
+  stream: ReadableStream<Uint8Array>;
+  contentLength: number;
+  contentType: string;
+}> {
+  const client = getR2Client();
+  const out = await client.send(
+    new GetObjectCommand({ Bucket: R2_BUCKET_NAME!, Key: key })
+  );
+  if (!out.Body) throw new Error("Empty R2 object body");
+  const contentLength = out.ContentLength ?? 0;
+  const contentType = out.ContentType || "application/octet-stream";
+  const stream = Readable.toWeb(out.Body as Readable) as ReadableStream<Uint8Array>;
+  return { stream, contentLength, contentType };
 }
 
 /** Allowed key prefixes for /api/media proxy */

@@ -1,6 +1,6 @@
 import {
-  getObjectBuffer,
   getObjectBufferRange,
+  getObjectWebStream,
   headObject,
   inferContentTypeFromKey,
   isAllowedMediaKey,
@@ -93,12 +93,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const { buffer, contentType } = await getObjectBuffer(key);
+    const { stream, contentLength, contentType } = await getObjectWebStream(key);
     const resolved = resolveContentType(contentType, key);
-    return new NextResponse(new Uint8Array(buffer), {
+    return new NextResponse(stream, {
       headers: {
         "Content-Type": resolved,
-        "Content-Length": String(buffer.length),
+        ...(contentLength > 0 ? { "Content-Length": String(contentLength) } : {}),
         "Accept-Ranges": "bytes",
         "Cache-Control": "private, max-age=3600",
       },
