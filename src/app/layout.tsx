@@ -1,6 +1,5 @@
 import { AuthBroadcastListener } from "@/components/auth/AuthBroadcastListener";
-import { TrialLifecycleChrome } from "@/components/trial/TrialLifecycleChrome";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fredoka, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +20,10 @@ export const metadata: Metadata = {
   description: "Where drawings come alive. Transform your child's drawing into a photorealistic CGI image and animate it into a short cinematic video.",
 };
 
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,10 +33,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${fredoka.variable} ${plusJakarta.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body
+        className="min-h-full flex flex-col font-sans"
+        suppressHydrationWarning
+      >
         <AuthBroadcastListener />
-        <TrialLifecycleChrome />
         {children}
       </body>
     </html>

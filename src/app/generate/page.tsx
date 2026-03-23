@@ -7,17 +7,12 @@ import { SketchMagicLoader } from "@/components/SketchMagicLoader";
 import { SupportContact } from "@/components/SupportContact";
 import { CgiVariantSlider } from "@/components/generate/CgiVariantSlider";
 import { CreateVideoCta } from "@/components/generate/CreateVideoCta";
-import {
-  FunnelBottomDock,
-  FunnelLegalDisclaimer,
-} from "@/components/funnel/FunnelBottomDock";
-import { FunnelStepIndicator } from "@/components/funnel/FunnelStepIndicator";
+import { FunnelBottomDock } from "@/components/funnel/FunnelBottomDock";
+import { SkipTrialModal } from "@/components/trial/SkipTrialModal";
 import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { TRIAL_IMAGE_LIMIT_CODE } from "@/constants/trial";
 import { BillingApiError } from "@/lib/billing-api-error";
 import { formatErrorForUser } from "@/lib/format-user-error";
-import { createClient } from "@/lib/supabase/client";
-import { openStripeBillingPortal } from "@/lib/open-stripe-billing-portal-client";
 import {
   getGeneratedVariantKeys,
   saveGeneratedVariantKeys,
@@ -58,7 +53,7 @@ export default function GeneratePage() {
   const [activeVariant, setActiveVariant] = useState(0);
   const [generateProgress, setGenerateProgress] = useState(0);
   const [trialImageLimitHit, setTrialImageLimitHit] = useState(false);
-  const [billingBusy, setBillingBusy] = useState(false);
+  const [skipTrialOpen, setSkipTrialOpen] = useState(false);
   const startedRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -139,27 +134,30 @@ export default function GeneratePage() {
 
   if (!uploadReady || !upload) {
     return (
-      <div className="flex h-[100vh] min-h-[100vh] items-center justify-center bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+      <div className="flex h-[100dvh] min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
         <div className="animate-pulse text-[#6B6B6B]">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[100vh] min-h-[100vh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+    <div className="flex h-[100dvh] min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+      <SkipTrialModal
+        open={skipTrialOpen}
+        variant="image"
+        onClose={() => setSkipTrialOpen(false)}
+      />
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
         <HeaderUserAvatar />
       </header>
-
-      <FunnelStepIndicator step={3} className="shrink-0 px-5 pb-2" />
 
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex min-h-0 flex-1 flex-col px-5">
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {status === "generating" && (
               <div className="flex min-h-0 flex-1 flex-col py-4">
-                <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
+                <div className="mx-auto flex w-full max-w-md flex-col items-center py-2 text-center">
                   <div
                     className="mb-4"
                     style={{
@@ -193,7 +191,10 @@ export default function GeneratePage() {
                     />
                   </div>
 
-                  <p className="text-sm text-[#9B9B9B]" style={{ fontFamily: "var(--font-body)" }}>
+                  <p
+                    className="pb-mobile-browser text-sm text-[#9B9B9B]"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
                     Usually under 2 minutes · we&apos;re creating 3 versions in parallel
                   </p>
                 </div>
@@ -202,7 +203,7 @@ export default function GeneratePage() {
 
             {status === "error" && (
               <div className="flex min-h-0 flex-1 flex-col px-1 py-6">
-                <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
+                <div className="mx-auto flex w-full max-w-md flex-col items-center py-2 text-center">
                   <ErrorStateIcon className="mb-4" size={64} />
                   <h1
                     className="mb-3 text-[32px] font-bold text-[#1A1A1A]"
@@ -210,18 +211,56 @@ export default function GeneratePage() {
                   >
                     {trialImageLimitHit ? "Trial image limit reached" : "Couldn't finish the magic"}
                   </h1>
-                  <p className="mb-4 text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
+                  <p
+                    className={`text-[#6B6B6B] ${trialImageLimitHit ? "" : "mb-4"}`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
                     {trialImageLimitHit ? error : formatErrorForUser(error ?? "")}
                   </p>
                   {trialImageLimitHit ? null : (
                     <SupportContact className="mx-auto max-w-sm" errorSummary={error} />
                   )}
+
+                  <FunnelBottomDock>
+                    <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                      {trialImageLimitHit ? (
+                        <FunnelPrimaryButton
+                          type="button"
+                          onClick={() => setSkipTrialOpen(true)}
+                          className="w-full"
+                          style={{ fontFamily: "var(--font-body)" }}
+                        >
+                          Upgrade in Billing
+                        </FunnelPrimaryButton>
+                      ) : (
+                        <FunnelPrimaryButton
+                          type="button"
+                          onClick={() => {
+                            startedRef.current = false;
+                            void runGeneration();
+                          }}
+                          className="w-full"
+                          style={{ fontFamily: "var(--font-body)" }}
+                        >
+                          Try again
+                        </FunnelPrimaryButton>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => router.push("/upload")}
+                        className="text-center text-sm text-[#6B6B6B] underline"
+                        style={{ fontFamily: "var(--font-body)" }}
+                      >
+                        Start over
+                      </button>
+                    </div>
+                  </FunnelBottomDock>
                 </div>
               </div>
             )}
 
             {status === "ready" && variantKeys && (
-              <div className="mx-auto w-full max-w-md pb-4 pt-1">
+              <div className="mx-auto w-full max-w-md pt-1">
                 <CgiVariantSlider
                   slides={[
                     mediaUrl(variantKeys[0]),
@@ -231,80 +270,13 @@ export default function GeneratePage() {
                   activeIndex={activeVariant}
                   onActiveIndexChange={setActiveVariant}
                 />
+                <FunnelBottomDock>
+                  <CreateVideoCta activeVariant={activeVariant} />
+                </FunnelBottomDock>
               </div>
             )}
           </div>
         </main>
-
-        <FunnelBottomDock className="px-5">
-          <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-            {status === "generating" && (
-              <FunnelPrimaryButton
-                type="button"
-                disabled
-                className="w-full cursor-wait !opacity-90"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                Creating your CGI…
-              </FunnelPrimaryButton>
-            )}
-            {status === "error" && (
-              <>
-                {trialImageLimitHit ? (
-                  <FunnelPrimaryButton
-                    type="button"
-                    onClick={async () => {
-                      setBillingBusy(true);
-                      try {
-                        const {
-                          data: { user },
-                        } = await createClient().auth.getUser();
-                        const email = user?.email?.trim();
-                        if (!email) {
-                          router.push("/dashboard/billing");
-                          return;
-                        }
-                        await openStripeBillingPortal(email, { returnPath: "/generate" });
-                      } catch {
-                        router.push("/dashboard/billing");
-                      } finally {
-                        setBillingBusy(false);
-                      }
-                    }}
-                    className="w-full"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    {billingBusy ? "Opening billing…" : "Upgrade in Billing"}
-                  </FunnelPrimaryButton>
-                ) : (
-                  <FunnelPrimaryButton
-                    type="button"
-                    onClick={() => {
-                      startedRef.current = false;
-                      void runGeneration();
-                    }}
-                    className="w-full"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    Try again
-                  </FunnelPrimaryButton>
-                )}
-                <button
-                  type="button"
-                  onClick={() => router.push("/upload")}
-                  className="text-center text-sm text-[#6B6B6B] underline"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  Start over
-                </button>
-              </>
-            )}
-            {status === "ready" && variantKeys && (
-              <CreateVideoCta activeVariant={activeVariant} />
-            )}
-            <FunnelLegalDisclaimer />
-          </div>
-        </FunnelBottomDock>
       </div>
     </div>
   );

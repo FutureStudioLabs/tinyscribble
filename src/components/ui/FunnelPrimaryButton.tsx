@@ -6,7 +6,7 @@ import type { ButtonHTMLAttributes } from "react";
  * Paywall uses black `PaywallPrimaryButton` instead.
  */
 export const funnelPrimaryButtonClassName =
-  "flex h-14 min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#FF7B5C] text-base font-bold text-white transition-colors duration-200 hover:bg-[#FF6B4A] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "flex h-14 min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#FF7B5C] px-5 text-base font-bold text-white transition-colors duration-200 hover:bg-[#FF6B4A] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:px-6";
 
 export function FunnelPrimaryButton({
   className = "",

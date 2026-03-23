@@ -9,7 +9,7 @@ import {
 } from "@/constants/trial";
 import { createClient } from "@/lib/supabase/client";
 import { openStripeBillingPortal } from "@/lib/open-stripe-billing-portal-client";
-import { CheckIcon, ShieldCheckIcon, VideoCameraIcon } from "@phosphor-icons/react";
+import { CheckIcon, ImagesSquare, ShieldCheckIcon, VideoCameraIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 
 type BillingPlan = "monthly" | "annual";
@@ -17,9 +17,11 @@ type BillingPlan = "monthly" | "annual";
 type Props = {
   open: boolean;
   onClose: () => void;
+  /** `video` = one trial video; `image` = CGI image batch limit on /generate */
+  variant?: "video" | "image";
 };
 
-export function SkipTrialModal({ open, onClose }: Props) {
+export function SkipTrialModal({ open, onClose, variant = "video" }: Props) {
   const [busy, setBusy] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [plan, setPlan] = useState<BillingPlan>("annual");
@@ -111,6 +113,13 @@ export function SkipTrialModal({ open, onClose }: Props) {
 
   if (!open) return null;
 
+  const isImage = variant === "image";
+  const eyebrow = isImage ? "Trial · Image limit" : "Trial · Video limit";
+  const title = isImage ? "Ready for more CGI?" : "Ready for your next animation?";
+  const bodyLead = isImage
+    ? "Your trial included up to 5 CGI images."
+    : "Your trial included one video.";
+
   return (
     <div
       className="fixed inset-0 z-[200] flex items-end justify-center p-4 sm:items-center"
@@ -126,30 +135,38 @@ export function SkipTrialModal({ open, onClose }: Props) {
       />
 
       <div
-        className="animate-scale-in relative w-full max-w-2xl overflow-hidden rounded-[1.75rem] shadow-[0_0_0_1px_rgba(26,26,26,0.04),0_32px_64px_-12px_rgba(26,15,12,0.45),0_12px_24px_-8px_rgba(255,123,92,0.12)]"
+        className="animate-scale-in relative flex max-h-[min(92dvh,calc(100dvh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-[1.75rem] shadow-[0_0_0_1px_rgba(26,26,26,0.04),0_32px_64px_-12px_rgba(26,15,12,0.45),0_12px_24px_-8px_rgba(255,123,92,0.12)]"
         style={{ fontFamily: "var(--font-body)" }}
       >
         <div
-          className="absolute inset-0 bg-gradient-to-b from-[#FFFAF7] via-white to-[#FFF5F0]"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#FFFAF7] via-white to-[#FFF5F0]"
           aria-hidden
         />
         <div
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF7B5C]/35 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF7B5C]/35 to-transparent"
           aria-hidden
         />
 
-        <div className="relative px-5 pb-8 pt-7 sm:px-8 sm:pb-9 sm:pt-8">
-          <div className="mb-5 flex justify-center">
-            <div
-              className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7B5C] to-[#FF9E6C] shadow-[0_8px_24px_-4px_rgba(255,123,92,0.55)]"
-              aria-hidden
-            >
-              <VideoCameraIcon size={28} weight="fill" className="text-white drop-shadow-sm" />
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-mobile-browser pt-7 sm:px-8 sm:pb-9 sm:pt-8"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <div className="mb-5 flex justify-center">
+              <div
+                className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7B5C] to-[#FF9E6C] shadow-[0_8px_24px_-4px_rgba(255,123,92,0.55)]"
+                aria-hidden
+              >
+                {isImage ? (
+                  <ImagesSquare size={28} weight="fill" className="text-white drop-shadow-sm" />
+                ) : (
+                  <VideoCameraIcon size={28} weight="fill" className="text-white drop-shadow-sm" />
+                )}
+              </div>
             </div>
-          </div>
 
           <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9B9B9B]">
-            Trial · Video limit
+            {eyebrow}
           </p>
 
           <h2
@@ -157,37 +174,35 @@ export function SkipTrialModal({ open, onClose }: Props) {
             className="mb-3 text-center text-[1.5rem] font-bold leading-[1.2] tracking-tight text-[#1A1A1A] sm:text-[1.75rem]"
             style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
           >
-            Ready for your next animation?
+            {title}
           </h2>
 
-          <p className="mx-auto mb-2 max-w-2xl text-center text-[15px] leading-relaxed text-[#6B6B6B] sm:text-base">
-            Your trial included one video. Pick how you&apos;d like to be billed — we&apos;ll end
-            the trial and charge your card on file for the plan you choose.
-          </p>
-
-          <p className="mx-auto mb-5 text-center text-[13px] leading-snug text-[#9B9B9B]">
-            Same Starter pricing as signup · change or cancel anytime in Stripe.
+          <p className="mx-auto mb-5 max-w-sm text-center text-[14px] leading-snug text-[#6B6B6B] sm:max-w-md sm:text-[15px]">
+            {bodyLead} Choose a plan—we&apos;ll charge your card on file.
+            <span className="mt-2 block text-[12px] leading-snug text-[#9B9B9B] sm:text-[13px]">
+              Cancel anytime in Stripe.
+            </span>
           </p>
 
           <p className="mb-3 text-center text-[13px] font-semibold uppercase tracking-wide text-[#9B9B9B]">
             Choose billing
           </p>
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setPlan("monthly")}
-              className={`relative rounded-2xl border-2 p-4 text-left transition-all ${
+              className={`relative rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${
                 plan === "monthly"
                   ? "border-[#1A1A1A] bg-[#FAFAFA] shadow-sm"
                   : "border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-[15px] font-bold text-[#1A1A1A]">Monthly</p>
-                  <p className="mt-1 text-[18px] font-bold tabular-nums">
+              <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-[#1A1A1A] sm:text-[15px]">Monthly</p>
+                  <p className="mt-0.5 text-[16px] font-bold tabular-nums sm:mt-1 sm:text-[18px]">
                     {STARTER_PLAN_DISPLAY.monthly.replace("/mo", "")}
-                    <span className="text-[14px] font-semibold text-[#6B6B6B]">/mo</span>
+                    <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[14px]">/mo</span>
                   </p>
                 </div>
                 <span
@@ -205,24 +220,24 @@ export function SkipTrialModal({ open, onClose }: Props) {
             <button
               type="button"
               onClick={() => setPlan("annual")}
-              className={`relative rounded-2xl border-2 p-4 pb-5 text-left transition-all ${
+              className={`relative rounded-2xl border-2 p-3 pb-4 pt-4 text-left transition-all sm:p-4 sm:pb-5 sm:pt-5 ${
                 plan === "annual"
                   ? "border-[#1A1A1A] bg-[#FAFAFA] shadow-sm"
                   : "border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
               }`}
             >
-              <span className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1A1A1A] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1A1A1A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:-top-2.5 sm:px-2.5 sm:text-[10px]">
                 Best value
               </span>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-[15px] font-bold text-[#1A1A1A]">Yearly</p>
-                  <p className="mt-1 text-[18px] font-bold tabular-nums">
+              <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-[#1A1A1A] sm:text-[15px]">Yearly</p>
+                  <p className="mt-0.5 text-[16px] font-bold tabular-nums sm:mt-1 sm:text-[18px]">
                     {STARTER_PLAN_DISPLAY.yearlyEquivalent.replace("/mo", "")}
-                    <span className="text-[14px] font-semibold text-[#6B6B6B]">/mo</span>
+                    <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[14px]">/mo</span>
                   </p>
-                  <p className="mt-1 text-[11px] font-medium text-[#9B9B9B]">
-                    {STARTER_PLAN_DISPLAY.yearlyTotal} billed yearly
+                  <p className="mt-0.5 text-[10px] font-medium leading-snug text-[#9B9B9B] sm:mt-1 sm:text-[11px]">
+                    {STARTER_PLAN_DISPLAY.yearlyTotal}/yearly
                   </p>
                 </div>
                 <span
@@ -284,6 +299,7 @@ export function SkipTrialModal({ open, onClose }: Props) {
               <span className="font-semibold text-[#6B6B6B]">Stripe</span> handles payment and
               receipts. We never store your card on our servers.
             </p>
+          </div>
           </div>
         </div>
       </div>

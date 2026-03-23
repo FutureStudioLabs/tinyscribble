@@ -4,11 +4,7 @@ import { ErrorStateIcon } from "@/components/ErrorStateIcon";
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
 import { SupportContact } from "@/components/SupportContact";
-import {
-  FunnelBottomDock,
-  FunnelLegalDisclaimer,
-} from "@/components/funnel/FunnelBottomDock";
-import { FunnelStepIndicator } from "@/components/funnel/FunnelStepIndicator";
+import { FunnelBottomDock } from "@/components/funnel/FunnelBottomDock";
 import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { formatErrorForUser } from "@/lib/format-user-error";
 import { uploadFormDataWithProgress } from "@/lib/upload-with-progress";
@@ -94,26 +90,23 @@ export default function LoadingPage() {
 
   if (!uploadReady || !upload) {
     return (
-      <div className="flex h-[100vh] min-h-[100vh] flex-col items-center justify-center bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+      <div className="flex h-[100dvh] min-h-[100dvh] flex-col items-center justify-center bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
         <div className="animate-pulse text-[#6B6B6B]">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[100vh] min-h-[100vh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0] transition-opacity duration-300">
+    <div className="flex h-[100dvh] min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0] transition-opacity duration-300">
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
         <HeaderUserAvatar />
       </header>
 
-      <FunnelStepIndicator step={2} className="shrink-0 px-5 pb-2" />
-
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex min-h-0 flex-1 flex-col px-5">
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-visible">
-            <div className="flex flex-1 flex-col items-center justify-center py-6">
-              <div className="mx-auto w-full max-w-md overflow-visible text-center">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-visible">
+            <div className="mx-auto flex w-full max-w-md grow-0 flex-col items-center pt-6 text-center">
             {uploadError ? <ErrorStateIcon className="mb-4" size={56} /> : null}
 
             {/* Preview only after upload succeeds — hidden while upload is in progress */}
@@ -147,7 +140,7 @@ export default function LoadingPage() {
 
             {uploadComplete && !uploadError ? (
               <p
-                className="mb-6 text-base text-[#6B6B6B]"
+                className="text-base text-[#6B6B6B]"
                 style={{
                   fontFamily: "var(--font-body)",
                   lineHeight: 1.5,
@@ -172,7 +165,7 @@ export default function LoadingPage() {
             )}
 
             {uploadError && (
-              <div className="mb-6 text-center">
+              <div className="text-center">
                 <p
                   className="text-[#6B6B6B] text-base mb-4"
                   style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
@@ -223,50 +216,46 @@ export default function LoadingPage() {
                 </div>
               </>
             )}
-              </div>
+
+            {(uploadComplete || uploadError) && (
+              <FunnelBottomDock className="w-full">
+                <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                  {uploadComplete && !uploadError && (
+                    <FunnelPrimaryButton
+                      type="button"
+                      onClick={() => router.push("/generate")}
+                      className="w-full"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      Bring your image to life
+                    </FunnelPrimaryButton>
+                  )}
+                  {uploadError && (
+                    <>
+                      <FunnelPrimaryButton
+                        type="button"
+                        onClick={handleRetryUpload}
+                        className="w-full"
+                        style={{ fontFamily: "var(--font-body)" }}
+                      >
+                        Try again
+                      </FunnelPrimaryButton>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/upload")}
+                        className="text-center text-sm text-[#6B6B6B] underline"
+                        style={{ fontFamily: "var(--font-body)" }}
+                      >
+                        Choose a different file
+                      </button>
+                    </>
+                  )}
+                </div>
+              </FunnelBottomDock>
+            )}
             </div>
           </div>
         </main>
-
-        {(uploadComplete || uploadError) && (
-          <FunnelBottomDock className="px-5">
-            <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-              {uploadComplete && !uploadError && (
-                <>
-                  <FunnelPrimaryButton
-                    type="button"
-                    onClick={() => router.push("/generate")}
-                    className="w-full"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    Bring your image to life
-                  </FunnelPrimaryButton>
-                  <FunnelLegalDisclaimer />
-                </>
-              )}
-              {uploadError && (
-                <>
-                  <FunnelPrimaryButton
-                    type="button"
-                    onClick={handleRetryUpload}
-                    className="w-full"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    Try again
-                  </FunnelPrimaryButton>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/upload")}
-                    className="text-center text-sm text-[#6B6B6B] underline"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    Choose a different file
-                  </button>
-                </>
-              )}
-            </div>
-          </FunnelBottomDock>
-        )}
       </div>
     </div>
   );

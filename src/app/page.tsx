@@ -26,8 +26,8 @@ export default async function Home() {
         <HeaderUserAvatar showLoginWhenAnonymous />
       </header>
 
-      {/* Hero — min 100vh; CTA follows headline (not pinned to viewport bottom) */}
-      <main className="min-h-[100vh] px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+      {/* Hero — min dynamic viewport; extra bottom pad for mobile browser chrome */}
+      <main className="min-h-[100dvh] px-5 pb-mobile-browser pt-2">
         <div className="mx-auto flex w-full max-w-md flex-col items-center">
           {/* Hero video — autoplay looping, silent */}
           <div className="mb-4 flex aspect-[3/4] max-h-[calc(50vh-32px)] w-full max-w-md flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black">

@@ -36,7 +36,7 @@ export function ExitPaywallScreen() {
 
   return (
     <div
-      className="relative flex h-[100vh] min-h-[100vh] flex-col bg-[#F5F5F5] text-[#1A1A1A]"
+      className="relative flex h-[100dvh] min-h-[100dvh] flex-col bg-[#F5F5F5] text-[#1A1A1A]"
       style={{ fontFamily: "var(--font-body)" }}
     >
       {/* Soft confetti-like dots */}
@@ -64,7 +64,7 @@ export function ExitPaywallScreen() {
       </header>
 
       <div className="relative z-[1] mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
-        <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-4">
+        <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-mobile-browser pt-4">
           <h1
             className="mb-2 text-center text-[28px] font-bold leading-tight sm:text-[32px]"
             style={{ fontFamily: "var(--font-fredoka)" }}
@@ -75,7 +75,7 @@ export function ExitPaywallScreen() {
             You won&apos;t see this price again.
           </p>
 
-          {/* Offer card */}
+          {/* Offer card (gift card) — pricing + CTA + links */}
           <div className="overflow-hidden rounded-[20px] border border-white/80 bg-gradient-to-b from-white via-[#F0F4FF] to-[#E8EEF8] p-8 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)]">
             <div className="mb-6 flex justify-center">
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md ring-4 ring-white/60">
@@ -92,38 +92,36 @@ export function ExitPaywallScreen() {
             <p className="mb-1 text-center text-[32px] font-bold tracking-tight sm:text-[36px]">
               Only $2.99<span className="text-[18px] font-bold text-[#6B6B6B]">/mo</span>
             </p>
-            <p className="text-center text-[13px] font-medium text-[#9B9B9B]">
+            <p className="mb-4 text-center text-[13px] font-medium text-[#9B9B9B]">
               $35.99/year — lowest price we offer
+            </p>
+
+            {checkoutError ? (
+              <p
+                className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-center text-[13px] font-medium text-red-800"
+                role="alert"
+              >
+                {checkoutError}
+              </p>
+            ) : null}
+            <PaywallPrimaryButton
+              disabled={checkoutLoading}
+              onClick={() => void handleClaim()}
+              className="mb-4"
+            >
+              {checkoutLoading ? "Redirecting…" : "Claim your limited offer now!"}
+            </PaywallPrimaryButton>
+            <p className="text-center text-[12px] leading-relaxed text-[#9B9B9B]">
+              <Link href="/paywall" className="underline underline-offset-2 hover:text-[#6B6B6B]">
+                Back to trial screen
+              </Link>
+              <span className="mx-2 text-[#DDD]">·</span>
+              <Link href="/generate" className="underline underline-offset-2 hover:text-[#6B6B6B]">
+                Return to my image
+              </Link>
             </p>
           </div>
         </main>
-
-        <div className="shrink-0 border-t border-[#E8E8E8] bg-[#F5F5F5] px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {checkoutError ? (
-            <p
-              className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-center text-[13px] font-medium text-red-800"
-              role="alert"
-            >
-              {checkoutError}
-            </p>
-          ) : null}
-          <PaywallPrimaryButton
-            disabled={checkoutLoading}
-            onClick={() => void handleClaim()}
-            className="mb-4"
-          >
-            {checkoutLoading ? "Redirecting…" : "Claim your limited offer now!"}
-          </PaywallPrimaryButton>
-          <p className="text-center text-[12px] leading-relaxed text-[#9B9B9B]">
-            <Link href="/paywall" className="underline underline-offset-2 hover:text-[#6B6B6B]">
-              Back to trial screen
-            </Link>
-            <span className="mx-2 text-[#DDD]">·</span>
-            <Link href="/generate" className="underline underline-offset-2 hover:text-[#6B6B6B]">
-              Return to my image
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

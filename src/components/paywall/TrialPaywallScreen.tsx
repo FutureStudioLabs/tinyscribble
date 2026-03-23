@@ -35,7 +35,7 @@ const COPY = {
     label: "Yearly",
     display: "$3.99",
     suffix: "/mo",
-    sub: "$47.99 billed yearly",
+    sub: "$47.99/yearly",
     stripeNote: "$47.99 per year ($3.99/mo)",
   },
 } as const;
@@ -161,7 +161,7 @@ export function TrialPaywallScreen() {
 
   return (
     <div
-      className="flex h-[100vh] min-h-[100vh] flex-col bg-white text-[#1A1A1A]"
+      className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden bg-white text-[#1A1A1A]"
       style={{ fontFamily: "var(--font-body)" }}
     >
       {/* Top bar */}
@@ -191,14 +191,13 @@ export function TrialPaywallScreen() {
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
         <main
           ref={mainRef}
-          className="min-h-0 flex-1 overflow-y-auto px-5 pb-2"
+          className="min-h-0 flex-1 overflow-y-auto px-5"
         >
         <h1
           className="mb-5 text-center text-[19px] font-bold leading-tight sm:mb-6 sm:text-[21px]"
           style={{ fontFamily: "var(--font-fredoka)" }}
         >
-          <span className="block">Start your 3-day</span>
-          <span className="mt-0.5 block">FREE trial to continue.</span>
+          Start your 3-day FREE trial.
         </h1>
 
         {/* Timeline — solid orange → orange → black circles; peach bars; gray tail (matches reference) */}
@@ -268,23 +267,37 @@ export function TrialPaywallScreen() {
         </div>
 
         {/* Plan cards */}
-        <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[#9B9B9B]">
-          Choose your plan
-        </p>
+        <div
+          className="mb-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-[#EFEFEF] px-3.5 py-2.5 sm:mb-3 sm:gap-3 sm:px-4 sm:py-3"
+          style={{ fontFamily: "var(--font-body)" }}
+        >
+          <span className="shrink-0 text-[1.125rem] leading-none sm:text-xl" aria-hidden>
+            🎬
+          </span>
+          <p className="min-w-0 flex-1 text-left text-[13px] font-semibold leading-snug text-[#2C2C2C] sm:text-[14px]">
+            3 videos and 20 scenes per month
+          </p>
+        </div>
         <div className="mb-2 grid grid-cols-2 gap-2 sm:gap-2.5">
           <button
             type="button"
             onClick={() => setPlan("monthly")}
-            className={`relative rounded-xl border-2 p-3 text-left transition-all sm:rounded-2xl sm:p-3.5 ${
+            className={`relative rounded-2xl p-3 text-left transition-all sm:rounded-[1.125rem] sm:p-3.5 ${
               plan === "monthly"
-                ? "border-[#1A1A1A] bg-[#FAFAFA] shadow-sm"
-                : "border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
+                ? "border-[3px] border-[#E68A6C] bg-[#FDF0E9] shadow-none"
+                : "border-2 border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
             }`}
           >
             <div className="flex items-start justify-between gap-1.5">
               <div>
-                <p className="text-[13px] font-bold sm:text-[14px]">{COPY.monthly.label}</p>
-                <p className="mt-0.5 text-[16px] font-bold sm:text-[17px]">
+                <p
+                  className={`text-[13px] font-bold sm:text-[14px] ${
+                    plan === "monthly" ? "text-[#4A4A4A]" : "text-[#1A1A1A]"
+                  }`}
+                >
+                  {COPY.monthly.label}
+                </p>
+                <p className="mt-0.5 text-[16px] font-bold text-[#1A1A1A] sm:text-[17px]">
                   {COPY.monthly.display}
                   <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[13px]">
                     {COPY.monthly.suffix}
@@ -293,7 +306,9 @@ export function TrialPaywallScreen() {
               </div>
               <span
                 className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 sm:h-6 sm:w-6 ${
-                  plan === "monthly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
+                  plan === "monthly"
+                    ? "border-[#E68A6C] bg-[#E68A6C]"
+                    : "border-[#CCC] bg-white"
                 }`}
               >
                 {plan === "monthly" ? (
@@ -306,19 +321,25 @@ export function TrialPaywallScreen() {
           <button
             type="button"
             onClick={() => setPlan("yearly")}
-            className={`relative rounded-xl border-2 p-3 pb-4 text-left transition-all sm:rounded-2xl sm:p-3.5 sm:pb-4 ${
+            className={`relative rounded-2xl p-3 pb-4 text-left transition-all sm:rounded-[1.125rem] sm:p-3.5 sm:pb-4 ${
               plan === "yearly"
-                ? "border-[#1A1A1A] bg-[#FAFAFA] shadow-sm"
-                : "border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
+                ? "border-[3px] border-[#E68A6C] bg-[#FDF0E9] shadow-none"
+                : "border-2 border-[#E8E8E8] bg-white hover:border-[#D0D0D0]"
             }`}
           >
-            <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1A1A1A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:-top-2.5 sm:px-2.5 sm:text-[10px]">
-              3 days free
+            <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#E68A6C] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:-top-2.5 sm:px-2.5 sm:py-1 sm:text-[10px]">
+              SAVE 56%
             </span>
             <div className="flex items-start justify-between gap-1.5">
               <div>
-                <p className="text-[13px] font-bold sm:text-[14px]">{COPY.yearly.label}</p>
-                <p className="mt-0.5 text-[16px] font-bold sm:text-[17px]">
+                <p
+                  className={`text-[13px] font-bold sm:text-[14px] ${
+                    plan === "yearly" ? "text-[#4A4A4A]" : "text-[#1A1A1A]"
+                  }`}
+                >
+                  {COPY.yearly.label}
+                </p>
+                <p className="mt-0.5 text-[16px] font-bold text-[#1A1A1A] sm:text-[17px]">
                   {COPY.yearly.display}
                   <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[13px]">
                     {COPY.yearly.suffix}
@@ -330,7 +351,9 @@ export function TrialPaywallScreen() {
               </div>
               <span
                 className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 sm:h-6 sm:w-6 ${
-                  plan === "yearly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
+                  plan === "yearly"
+                    ? "border-[#E68A6C] bg-[#E68A6C]"
+                    : "border-[#CCC] bg-white"
                 }`}
               >
                 {plan === "yearly" ? (
@@ -340,15 +363,14 @@ export function TrialPaywallScreen() {
             </div>
           </button>
         </div>
-        </main>
 
-        {/* Pinned bottom: CTA + legal (matches app flow pages) */}
-        <div className="shrink-0 border-t border-[#F0F0F0] px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* CTA + pricing note + links — scrolls with page (below plan cards) */}
+        <div className="mt-4 w-full border-t border-[#F0F0F0] pt-4 pb-mobile-browser">
           <p
-            className="mb-2 text-center text-[12px] leading-snug text-[#6B6B6B] sm:text-[13px]"
+            className="mb-2 text-center text-[14px] font-semibold leading-snug text-[#2E7D32] sm:text-[15px]"
             style={{ fontFamily: "var(--font-body)" }}
           >
-            3 videos &amp; 20 scenes included
+            ✓ No Payment Due Now
           </p>
           {checkoutError ? (
             <p
@@ -361,9 +383,9 @@ export function TrialPaywallScreen() {
           <PaywallPrimaryButton
             disabled={checkoutLoading}
             onClick={() => void handleStartTrial()}
-            className="mb-2 h-12 min-h-[48px] text-[15px] sm:mb-2.5"
+            className="mb-2 h-12 min-h-[48px] whitespace-nowrap px-3 text-[13px] sm:mb-2.5 sm:text-[15px]"
           >
-            {checkoutLoading ? "Redirecting…" : "Start my 3-day trial for $0"}
+            {checkoutLoading ? "Redirecting…" : "Start your 3-day free trial"}
           </PaywallPrimaryButton>
           <p className="mb-2 text-center text-[11px] leading-snug text-[#9B9B9B] sm:mb-2.5 sm:text-[12px]">
             {footerLine}
@@ -378,6 +400,7 @@ export function TrialPaywallScreen() {
             </Link>
           </p>
         </div>
+        </main>
       </div>
 
       {restoreOpen ? (

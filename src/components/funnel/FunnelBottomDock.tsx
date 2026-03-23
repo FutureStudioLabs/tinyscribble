@@ -9,26 +9,24 @@ const DOCK_BG = {
 } as const;
 
 /**
- * Bottom region for funnel steps: stays visible while the area above scrolls.
- * Background matches the page surface (no frosted overlay).
+ * CTA block after step copy — scrolls with the page (same pattern as paywall main).
+ * Uses `mt-4` (16px) from preceding content; avoid large `mb-*` on the last block above.
+ * Optional background when the parent surface isn’t a flat match (e.g. gradient pages).
  */
 export function FunnelBottomDock({
   children,
   className = "",
-  tone = "funnel",
+  tone = "none",
 }: {
   children: ReactNode;
   className?: string;
-  /** Align with parent: flat cream vs gradient funnel end. */
-  tone?: keyof typeof DOCK_BG;
+  /** `cream` / `funnel` tint if needed; `none` keeps parent background visible. */
+  tone?: keyof typeof DOCK_BG | "none";
 }) {
+  const bg = tone === "none" ? "" : DOCK_BG[tone];
   return (
     <div
-      className={`sticky bottom-0 z-30 shrink-0 border-t border-[#F0F0F0] ${DOCK_BG[tone]} ${className}`}
-      style={{
-        paddingTop: "0.75rem",
-        paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-      }}
+      className={`mt-4 w-full max-w-full shrink-0 self-stretch pb-mobile-browser ${bg} ${className}`}
     >
       {children}
     </div>

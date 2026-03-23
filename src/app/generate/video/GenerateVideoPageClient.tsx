@@ -4,11 +4,7 @@ import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
 import { SketchMagicLoader } from "@/components/SketchMagicLoader";
 import { SkipTrialModal } from "@/components/trial/SkipTrialModal";
-import {
-  FunnelBottomDock,
-  FunnelLegalDisclaimer,
-} from "@/components/funnel/FunnelBottomDock";
-import { FunnelStepIndicator } from "@/components/funnel/FunnelStepIndicator";
+import { FunnelBottomDock } from "@/components/funnel/FunnelBottomDock";
 import {
   FunnelPrimaryButton,
   funnelPrimaryButtonClassName,
@@ -324,7 +320,7 @@ export function GenerateVideoPageClient() {
     const bootBody =
       bootstrapStep === "funnel"
         ? "We’re pulling in your drawing and the CGI versions from this session. If you opened this link in a new device or private window, start again from Upload."
-        : "Making sure your subscription is active. Right after checkout this can take a few seconds while Stripe and your account sync.";
+        : "Verifying your subscription — usually just a few seconds, especially right after checkout.";
 
     return (
       <>
@@ -334,83 +330,92 @@ export function GenerateVideoPageClient() {
             <Logo />
             <HeaderUserAvatar />
           </header>
-          <FunnelStepIndicator step={4} className="shrink-0 px-5 pb-2" />
           <div className="flex min-h-0 flex-1 flex-col">
             <main className="flex min-h-0 flex-1 flex-col px-5">
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto py-4">
-                <div
-                  className="w-full max-w-[min(100%,22rem)] rounded-[1.35rem] border border-white/90 bg-white/95 px-7 py-10 text-center shadow-[0_20px_50px_-18px_rgba(255,123,92,0.25),0_0_0_1px_rgba(255,123,92,0.06)] backdrop-blur-sm"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-4">
+                <div className="mx-auto flex w-full max-w-[min(100%,22rem)] flex-col items-center">
                   <div
-                    className="mx-auto mb-6 flex h-[4.5rem] w-[4.5rem] items-center justify-center [&_svg]:max-h-[3.25rem]"
-                    aria-hidden
+                    className="w-full rounded-[1.35rem] border border-white/90 bg-white/95 px-7 py-10 text-center shadow-[0_20px_50px_-18px_rgba(255,123,92,0.25),0_0_0_1px_rgba(255,123,92,0.06)] backdrop-blur-sm"
+                    style={{ fontFamily: "var(--font-body)" }}
                   >
-                    <SketchMagicLoader />
-                  </div>
-                  <h1
-                    className="mb-3 text-[32px] font-bold leading-tight tracking-tight text-[#1A1A1A]"
-                    style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
-                  >
-                    {bootTitle}
-                  </h1>
-                  <p className="text-sm leading-relaxed text-[#6B6B6B]">{bootBody}</p>
-                  <div
-                    className="mx-auto mt-8 h-1 max-w-[7rem] overflow-hidden rounded-full bg-[#FF7B5C]/15"
-                    aria-hidden
-                  >
-                    <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[#FF7B5C]/40 to-[#FF9E6C]/60" />
-                  </div>
-                  {bootStalled ? (
-                    <p className="mt-8 border-t border-[#E8E8E8] pt-8 text-xs font-medium uppercase tracking-wider text-[#9B9B9B]">
-                      Taking too long? Use the actions below.
+                    <div
+                      className="mx-auto mb-6 flex h-[4.5rem] w-[4.5rem] items-center justify-center [&_svg]:max-h-[3.25rem]"
+                      aria-hidden
+                    >
+                      <SketchMagicLoader />
+                    </div>
+                    <h1
+                      className="mb-3 text-[32px] font-bold leading-tight tracking-tight text-[#1A1A1A]"
+                      style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
+                    >
+                      {bootTitle}
+                    </h1>
+                    <p
+                      className={`text-[#6B6B6B] ${
+                        bootstrapStep === "funnel"
+                          ? "text-sm leading-relaxed"
+                          : "text-xs leading-snug sm:text-[13px]"
+                      }`}
+                    >
+                      {bootBody}
                     </p>
-                  ) : null}
+                    <div
+                      className="mx-auto mt-8 h-1 max-w-[7rem] overflow-hidden rounded-full bg-[#FF7B5C]/15"
+                      aria-hidden
+                    >
+                      <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[#FF7B5C]/40 to-[#FF9E6C]/60" />
+                    </div>
+                    {bootStalled ? (
+                      <p className="mt-8 border-t border-[#E8E8E8] pt-8 text-xs font-medium uppercase tracking-wider text-[#9B9B9B]">
+                        Taking too long? Use the actions below.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <FunnelBottomDock className="w-full max-w-md">
+                    <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                      {bootStalled ? (
+                        <>
+                          <FunnelPrimaryButton
+                            type="button"
+                            onClick={() => window.location.assign("/upload")}
+                            className="w-full"
+                            style={{ fontFamily: "var(--font-body)" }}
+                          >
+                            Start from upload
+                          </FunnelPrimaryButton>
+                          <button
+                            type="button"
+                            onClick={() => window.location.assign("/generate")}
+                            className="w-full rounded-full border border-[#E8E8E8] bg-white py-3 text-sm font-semibold text-[#1A1A1A] transition hover:bg-[#FFF8F5]"
+                            style={{ fontFamily: "var(--font-body)" }}
+                          >
+                            Pick a CGI version
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => window.location.assign("/dashboard/upload")}
+                            className="text-center text-sm font-semibold text-[#6B6B6B] underline underline-offset-2 hover:text-[#1A1A1A]"
+                            style={{ fontFamily: "var(--font-body)" }}
+                          >
+                            Dashboard upload
+                          </button>
+                        </>
+                      ) : (
+                        <FunnelPrimaryButton
+                          type="button"
+                          disabled
+                          className="w-full cursor-wait !opacity-90"
+                          style={{ fontFamily: "var(--font-body)" }}
+                        >
+                          {bootstrapStep === "funnel" ? "Loading your artwork…" : "Checking your plan…"}
+                        </FunnelPrimaryButton>
+                      )}
+                    </div>
+                  </FunnelBottomDock>
                 </div>
               </div>
             </main>
-            <FunnelBottomDock className="px-5">
-              <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-                {bootStalled ? (
-                  <>
-                    <FunnelPrimaryButton
-                      type="button"
-                      onClick={() => window.location.assign("/upload")}
-                      className="w-full"
-                      style={{ fontFamily: "var(--font-body)" }}
-                    >
-                      Start from upload
-                    </FunnelPrimaryButton>
-                    <button
-                      type="button"
-                      onClick={() => window.location.assign("/generate")}
-                      className="w-full rounded-full border border-[#E8E8E8] bg-white py-3 text-sm font-semibold text-[#1A1A1A] transition hover:bg-[#FFF8F5]"
-                      style={{ fontFamily: "var(--font-body)" }}
-                    >
-                      Pick a CGI version
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => window.location.assign("/dashboard/upload")}
-                      className="text-center text-sm font-semibold text-[#6B6B6B] underline underline-offset-2 hover:text-[#1A1A1A]"
-                      style={{ fontFamily: "var(--font-body)" }}
-                    >
-                      Dashboard upload
-                    </button>
-                  </>
-                ) : (
-                  <FunnelPrimaryButton
-                    type="button"
-                    disabled
-                    className="w-full cursor-wait !opacity-90"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    {bootstrapStep === "funnel" ? "Loading your artwork…" : "Checking your plan…"}
-                  </FunnelPrimaryButton>
-                )}
-                <FunnelLegalDisclaimer />
-              </div>
-            </FunnelBottomDock>
           </div>
         </div>
       </>
@@ -424,20 +429,18 @@ export function GenerateVideoPageClient() {
   return (
     <>
       <SkipTrialModal open={skipTrialOpen} onClose={() => setSkipTrialOpen(false)} />
-      <div className="flex h-[100vh] min-h-[100vh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+      <div className="flex h-[100dvh] min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
         <HeaderUserAvatar />
       </header>
-
-      <FunnelStepIndicator step={4} className="shrink-0 px-5 pb-2" />
 
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex min-h-0 flex-1 flex-col px-5">
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {showGenerating ? (
               <div className="flex min-h-0 flex-1 flex-col py-4">
-                <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
+                <div className="mx-auto flex w-full max-w-md flex-col items-center py-2 text-center">
                   <div
                     className="mb-4"
                     style={{
@@ -469,7 +472,10 @@ export function GenerateVideoPageClient() {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-sm text-[#9B9B9B]" style={{ fontFamily: "var(--font-body)" }}>
+                  <p
+                    className="pb-mobile-browser text-sm text-[#9B9B9B]"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
                     Usually 30–90 seconds · hang tight
                   </p>
                 </div>
@@ -482,9 +488,30 @@ export function GenerateVideoPageClient() {
                 >
                   We couldn&apos;t finish the video
                 </h1>
-                <p className="mb-6 text-sm text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
+                <p className="text-sm text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
                   {videoError}
                 </p>
+
+                <FunnelBottomDock>
+                  <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleRetry()}
+                      className={`${funnelPrimaryButtonClassName} w-full`}
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      Try again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/generate")}
+                      className="w-full text-sm font-semibold text-[#6B6B6B] underline"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      Back to versions
+                    </button>
+                  </div>
+                </FunnelBottomDock>
               </div>
             ) : showComplete ? (
               <div className="w-full min-w-0 pb-4 pt-1">
@@ -546,71 +573,38 @@ export function GenerateVideoPageClient() {
                   </Link>
                   .
                 </p>
+
+                <FunnelBottomDock>
+                  <Link
+                    href="/dashboard/upload"
+                    className={`${funnelPrimaryButtonClassName} block w-full text-center no-underline`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    Upload another drawing
+                  </Link>
+                </FunnelBottomDock>
               </div>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center py-8">
                 <p className="text-sm text-[#6B6B6B]" style={{ fontFamily: "var(--font-body)" }}>
                   Getting ready…
                 </p>
+                <FunnelBottomDock>
+                  <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                    <FunnelPrimaryButton
+                      type="button"
+                      disabled
+                      className="w-full cursor-wait !opacity-90"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      Starting video…
+                    </FunnelPrimaryButton>
+                  </div>
+                </FunnelBottomDock>
               </div>
             )}
           </div>
         </main>
-
-        <FunnelBottomDock className="px-5">
-          <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-            {showGenerating && (
-              <FunnelPrimaryButton
-                type="button"
-                disabled
-                className="w-full cursor-wait !opacity-90"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                Making your video…
-              </FunnelPrimaryButton>
-            )}
-            {showError && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleRetry()}
-                  className={`${funnelPrimaryButtonClassName} w-full`}
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  Try again
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/generate")}
-                  className="w-full text-sm font-semibold text-[#6B6B6B] underline"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  Back to versions
-                </button>
-              </>
-            )}
-            {showComplete && (
-              <Link
-                href="/dashboard/upload"
-                className={`${funnelPrimaryButtonClassName} block w-full text-center no-underline`}
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                Upload another drawing
-              </Link>
-            )}
-            {!showGenerating && !showError && !showComplete && (
-              <FunnelPrimaryButton
-                type="button"
-                disabled
-                className="w-full cursor-wait !opacity-90"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                Starting video…
-              </FunnelPrimaryButton>
-            )}
-            <FunnelLegalDisclaimer />
-          </div>
-        </FunnelBottomDock>
       </div>
     </div>
     </>

@@ -42,75 +42,73 @@ export function DashboardUploadClient() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col px-5">
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex flex-col items-center py-6 sm:py-8">
-            <div className="relative w-full max-w-md text-center">
-              <p
-                className="mb-5 text-xs font-semibold uppercase tracking-wider text-[#9B9B9B]"
+          <div className="mx-auto flex w-full max-w-md flex-col items-center py-6 text-center sm:py-8">
+            <p
+              className="mb-5 text-xs font-semibold uppercase tracking-wider text-[#9B9B9B]"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              New creation
+            </p>
+            <FunnelUploadIconBadge className="mx-auto" />
+            <h2
+              className="mb-4 text-[32px] font-bold leading-tight text-[#1A1A1A]"
+              style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.15 }}
+            >
+              Turn a drawing into magic
+            </h2>
+            <p
+              className="mb-3 text-center text-[13px] text-[#9B9B9B]"
+              style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
+            >
+              JPEG, PNG, HEIC, or WebP.
+            </p>
+            <FunnelUploadGreatExamples className="mb-0" />
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/heic,image/webp"
+              className="hidden"
+              onChange={handleChange}
+            />
+            {error && (
+              <div className="mb-4 flex flex-col items-center space-y-3">
+                <ErrorStateIcon size={44} />
+                <p
+                  className="text-center text-sm text-red-600"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  {error}
+                </p>
+                <SupportContact errorSummary={error} />
+              </div>
+            )}
+          </div>
+
+          <FunnelBottomDock tone="cream">
+            <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+              <FunnelPrimaryButton
+                onClick={handleClick}
+                disabled={isUploading}
+                className="w-full disabled:!opacity-90"
                 style={{ fontFamily: "var(--font-body)" }}
               >
-                New creation
-              </p>
-              <FunnelUploadIconBadge className="mx-auto" />
-              <h2
-                className="mb-4 text-[32px] font-bold leading-tight text-[#1A1A1A]"
-                style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.15 }}
-              >
-                Turn a drawing into magic
-              </h2>
-              <p
-                className="mb-3 text-center text-[13px] text-[#9B9B9B]"
-                style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
-              >
-                JPEG, PNG, HEIC, or WebP.
-              </p>
-              <FunnelUploadGreatExamples className="mb-5" />
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/heic,image/webp"
-                className="hidden"
-                onChange={handleChange}
-              />
-              {error && (
-                <div className="mb-4 flex flex-col items-center space-y-3">
-                  <ErrorStateIcon size={44} />
-                  <p
-                    className="text-center text-sm text-red-600"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    {error}
-                  </p>
-                  <SupportContact errorSummary={error} />
-                </div>
-              )}
+                {isUploading ? (
+                  <>
+                    <CheckIcon size={24} weight="bold" />
+                    Starting…
+                  </>
+                ) : (
+                  <>
+                    Choose drawing
+                    <span className="text-lg">↑</span>
+                  </>
+                )}
+              </FunnelPrimaryButton>
+              <FunnelLegalDisclaimer />
             </div>
-          </div>
+          </FunnelBottomDock>
         </div>
       </div>
-
-      <FunnelBottomDock tone="cream" className="px-5">
-        <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-          <FunnelPrimaryButton
-            onClick={handleClick}
-            disabled={isUploading}
-            className="w-full disabled:!opacity-90"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            {isUploading ? (
-              <>
-                <CheckIcon size={24} weight="bold" />
-                Starting…
-              </>
-            ) : (
-              <>
-                Choose drawing
-                <span className="text-lg">↑</span>
-              </>
-            )}
-          </FunnelPrimaryButton>
-          <FunnelLegalDisclaimer />
-        </div>
-      </FunnelBottomDock>
     </div>
   );
 }

@@ -103,7 +103,7 @@
 | Element | Specification |
 |---------|---------------|
 | Layout | Top-to-bottom per Cal AI paywall_sample.png |
-| Heading | "Start your 3-day FREE trial to continue." |
+| Heading | "Start your 3-day FREE trial." |
 | Trial timeline | Vertical timeline: TODAY (lock) → DAY 2 (bell) → DAY 3 (crown) |
 | **Starter (initial plans)** | **Monthly $8.99/mo** · **Annual $47.99/yr** shown as **$3.99/mo** (regular annual) |
 | **Exit promo (Starter only)** | **$35.99/yr** shown as **$2.99/mo** — only on exit-intent / exit promo surface (see triggers below) |
