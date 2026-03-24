@@ -208,19 +208,20 @@ export default function DashboardGalleryPage() {
             )}
 
             {!loading && !fetchError && items.length === 0 && (
-              <div className="space-y-6">
+              <div className="flex flex-col items-center space-y-6 text-center">
                 <p
-                  className="text-sm leading-relaxed text-[#6B6B6B]"
+                  className="max-w-[18rem] text-sm leading-snug text-[#6B6B6B]"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
-                  Finished work will show up here. Start with a{" "}
-                  <strong className="font-semibold text-[#1A1A1A]">New scene</strong> — upload a drawing,
-                  then you can create videos from Generate.
+                  Your work will show up here.
+                  <br />
+                  Start with{" "}
+                  <strong className="font-semibold text-[#1A1A1A]">New scene</strong>.
                 </p>
-                <div className="flex justify-center">
+                <div className="flex shrink-0 justify-center">
                   <Link
                     href={newSceneHref}
-                    className="flex aspect-square w-full max-w-[11rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
+                    className="flex h-44 w-44 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                   >
                     <PlusIcon size={32} weight="bold" />
                     <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
@@ -230,7 +231,7 @@ export default function DashboardGalleryPage() {
                 </div>
                 <Link
                   href="/dashboard/billing"
-                  className="inline-block text-sm font-semibold text-[#FF7B5C] underline underline-offset-2 hover:text-[#FF6B4A]"
+                  className="text-sm font-semibold text-[#FF7B5C] underline underline-offset-2 hover:text-[#FF6B4A]"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   Billing &amp; plans
@@ -239,19 +240,19 @@ export default function DashboardGalleryPage() {
             )}
 
             {!loading && !fetchError && items.length > 0 && visibleItems.length === 0 && (
-              <div className="space-y-4">
+              <div className="flex flex-col items-center space-y-4 text-center">
                 <p
-                  className="text-sm leading-relaxed text-[#6B6B6B]"
+                  className="max-w-[18rem] text-sm leading-snug text-[#6B6B6B]"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   {mediaTab === "scene"
-                    ? "No scenes saved yet."
-                    : "No videos saved yet. Upload a new scene to create one from Generate."}
+                    ? "No scenes yet."
+                    : "No videos yet. Add a scene first."}
                 </p>
-                <div className="flex justify-center">
+                <div className="flex shrink-0 justify-center">
                   <Link
                     href={newSceneHref}
-                    className="flex aspect-square w-full max-w-[11rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
+                    className="flex h-44 w-44 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                   >
                     <PlusIcon size={32} weight="bold" />
                     <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
@@ -262,7 +263,10 @@ export default function DashboardGalleryPage() {
               </div>
             )}
 
-            {!loading && !fetchError && items.length > 0 && (
+            {/* Only render the grid (+ trailing "New scene" tile) when this tab has items.
+                If the other tab has items but this one is empty, the block above already shows
+                a single empty-state "New scene" — avoid duplicating the tile. */}
+            {!loading && !fetchError && items.length > 0 && visibleItems.length > 0 && (
               <div className="grid grid-cols-2 gap-3">
                 {visibleItems.map((item) => {
                   const video = isVideoKey(item.r2Key);
