@@ -11,22 +11,18 @@ import {
 } from "@/components/funnel/FunnelBottomDock";
 import { FunnelUploadGreatExamples } from "@/components/funnel/FunnelUploadGreatExamples";
 import { FunnelUploadIconBadge } from "@/components/funnel/FunnelUploadIconBadge";
-import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
+import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
 import type { ExamplePickInfo } from "@/components/funnel/FunnelUploadGreatExamples";
 import { setPendingUpload } from "@/lib/upload-store";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const FILE_ACCEPT = "image/jpeg,image/png,image/heic,image/webp";
 
 export default function UploadPage() {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleClick = () => {
-    setError(null);
-    inputRef.current?.click();
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,31 +80,38 @@ export default function UploadPage() {
                 <br />
                 bring it to life
               </h1>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/heic,image/webp"
-                className="hidden"
-                onChange={handleChange}
-              />
-              <FunnelPrimaryButton
-                onClick={handleClick}
-                disabled={isUploading}
-                className="mb-6 w-full max-w-md disabled:!opacity-90"
+              <label
+                className={[
+                  funnelPrimaryButtonClassName,
+                  "relative mb-6 w-full max-w-md",
+                  isUploading
+                    ? "pointer-events-none cursor-not-allowed opacity-90"
+                    : "cursor-pointer",
+                ].join(" ")}
                 style={{ fontFamily: "var(--font-body)" }}
+                aria-disabled={isUploading}
               >
-                {isUploading ? (
-                  <>
-                    <CheckIcon size={24} weight="bold" />
-                    Uploading…
-                  </>
-                ) : (
-                  <>
-                    Upload Your Drawing
-                    <span className="text-lg">↑</span>
-                  </>
-                )}
-              </FunnelPrimaryButton>
+                <input
+                  type="file"
+                  accept={FILE_ACCEPT}
+                  disabled={isUploading}
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                  onChange={handleChange}
+                />
+                <span className="pointer-events-none flex w-full items-center justify-center gap-2">
+                  {isUploading ? (
+                    <>
+                      <CheckIcon size={24} weight="bold" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      Upload Your Drawing
+                      <span className="text-lg">↑</span>
+                    </>
+                  )}
+                </span>
+              </label>
               <FunnelUploadGreatExamples
                 className="mb-0"
                 onExamplePick={handleExamplePick}

@@ -1,5 +1,4 @@
 import { AuthBroadcastListener } from "@/components/auth/AuthBroadcastListener";
-import { GlobalUpload } from "@/components/GlobalUpload";
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -41,7 +40,6 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthBroadcastListener />
-        <GlobalUpload />
         {children}
       </body>
     </html>
