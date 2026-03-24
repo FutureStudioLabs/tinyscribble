@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
   CreditCardIcon,
   FilmStripIcon,
   HourglassIcon,
@@ -116,29 +115,12 @@ export function DashboardBillingClient({ email }: Props) {
     <main className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mx-auto w-full max-w-md flex-1 px-5 pb-12 pt-6">
-          <div className="mb-2">
-            <Link
-              href="/dashboard"
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-1 py-2 text-sm font-semibold text-[#6B6B6B] -ml-1 transition-colors hover:text-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7B5C] focus-visible:ring-offset-2"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              <ArrowLeftIcon size={20} weight="bold" className="shrink-0" aria-hidden />
-              Back
-            </Link>
-          </div>
-
           <h1
-            className="mb-2 text-[28px] font-bold text-[#1A1A1A] sm:text-[32px]"
+            className="mb-8 text-[28px] font-bold text-[#1A1A1A] sm:text-[32px]"
             style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.15 }}
           >
             Billing
           </h1>
-          <p
-            className="mb-8 text-sm leading-relaxed text-[#6B6B6B]"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            Manage your plan and payments
-          </p>
 
           {loading ? (
             <div className="mb-4 h-48 animate-pulse rounded-[1.25rem] bg-[#EDE8E4]" />
@@ -362,17 +344,6 @@ export function DashboardBillingClient({ email }: Props) {
                 checkout email.
               </>
             )}
-          </p>
-
-          <p
-            className="mt-4 text-center text-xs leading-relaxed text-[#9B9B9B]"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            Wrong email on Stripe?{" "}
-            <Link href="/paywall" className="font-semibold text-[#6B6B6B] underline underline-offset-2">
-              Paywall
-            </Link>{" "}
-            → Restore subscription.
           </p>
         </div>
       </div>

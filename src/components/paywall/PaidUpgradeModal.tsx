@@ -127,7 +127,7 @@ export function PaidUpgradeModal({
               Want more magic this month?
             </h2>
             <p className="mb-6 text-center text-[15px] leading-snug text-[#6B6B6B]">
-              Upgrade your plan — videos unlock immediately.
+              Videos unlock immediately.
             </p>
 
             <div className="mb-5 grid grid-cols-2 gap-3">
@@ -178,7 +178,7 @@ export function PaidUpgradeModal({
             </div>
 
             <p className="mb-4 text-center text-[11px] leading-relaxed text-[#9B9B9B]">
-              Upgrades immediately · Renewal date stays the same · Cancel auto-renewal anytime
+              Upgrades immediately · Renewal date stays the same · Cancel anytime
             </p>
 
             {error ? (
@@ -197,7 +197,7 @@ export function PaidUpgradeModal({
               className="flex h-14 w-full items-center justify-center rounded-full bg-[#FF7B5C] px-3 text-center text-base font-bold leading-tight text-white shadow-[0_4px_14px_-4px_rgba(255,123,92,0.5)] transition active:scale-[0.98] disabled:opacity-60 sm:text-[15px]"
               aria-label={staticPreview ? "Close preview (no charge)" : undefined}
             >
-              {busy && !staticPreview ? "Processing…" : "Upgrade Now — videos unlock immediately"}
+              {busy && !staticPreview ? "Processing…" : "Upgrade my plan"}
             </button>
 
             <p className="mt-2 text-center text-[11px] text-[#A3A3A3]">

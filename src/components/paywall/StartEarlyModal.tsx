@@ -1,12 +1,13 @@
 "use client";
 
 import { DASHBOARD_PREVIEW_SAMPLE_DATES } from "@/constants/dashboard-client-copy";
-import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
 import { PAID_MONTHLY_SCENE_LIMIT, PAID_MONTHLY_VIDEO_LIMIT } from "@/constants/plan";
 import { STARTER_PLAN_DISPLAY } from "@/constants/starter-plan-display";
+import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { isTrialingStatus } from "@/lib/billing-entitlement-client";
-import { useCallback, useEffect, useId, useState } from "react";
+import { CheckIcon } from "@phosphor-icons/react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 type Plan = "yearly" | "monthly";
 
@@ -21,6 +22,24 @@ function formatTrialEndLabel(iso: string | null): string {
   } catch {
     return "";
   }
+}
+
+/** Short date for subtitle / dismiss (matches SkipTrialModal tone). */
+function formatTrialEndShort(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return null;
+  }
+}
+
+function parseUsdAmount(s: string): number {
+  const m = s.match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : 0;
 }
 
 type Props = {
@@ -49,6 +68,13 @@ export function StartEarlyModal({
   const [entLoading, setEntLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const savePct = useMemo(() => {
+    const monthly = parseUsdAmount(STARTER_PLAN_DISPLAY.monthly);
+    const yearlyTotal = parseUsdAmount(STARTER_PLAN_DISPLAY.yearlyTotal);
+    if (monthly <= 0) return 56;
+    return Math.round(100 * (1 - yearlyTotal / (monthly * 12)));
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -79,6 +105,10 @@ export function StartEarlyModal({
   const trialEndLabel = staticPreview
     ? DASHBOARD_PREVIEW_SAMPLE_DATES.trialPlanStart
     : formatTrialEndLabel(ent?.trialEndsAt ?? null);
+
+  const trialEndShort = staticPreview
+    ? "Mar 25"
+    : formatTrialEndShort(ent?.trialEndsAt ?? null);
 
   const handleCharge = useCallback(async () => {
     if (staticPreview) {
@@ -113,11 +143,6 @@ export function StartEarlyModal({
     }
   }, [plan, onClose, safeReturn, staticPreview]);
 
-  const primaryLabel =
-    plan === "yearly"
-      ? `Charge ${STARTER_PLAN_DISPLAY.yearlyTotal} and start now →`
-      : `Charge ${STARTER_PLAN_DISPLAY.monthly} and start now →`;
-
   if (!open) return null;
 
   const showContent =
@@ -125,6 +150,16 @@ export function StartEarlyModal({
   const notTrialing =
     !staticPreview && !entLoading && ent && !isTrialingStatus(ent.subscriptionStatus);
   const entMissing = !staticPreview && !entLoading && !ent;
+
+  const subtitle =
+    trialEndShort != null
+      ? `Your trial ends ${trialEndShort} — start your plan now. Videos unlock immediately.`
+      : "Start your plan now. Videos unlock immediately.";
+
+  const billedLine =
+    plan === "yearly"
+      ? `Billed as ${STARTER_PLAN_DISPLAY.yearlyTotal}/yr · Cancel anytime`
+      : `Billed as ${STARTER_PLAN_DISPLAY.monthly} · Cancel anytime`;
 
   return (
     <div
@@ -141,26 +176,21 @@ export function StartEarlyModal({
       />
 
       <div
-        className="animate-scale-in relative flex max-h-[min(92dvh,calc(100dvh-2rem))] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] shadow-[0_0_0_1px_rgba(26,26,26,0.04),0_32px_64px_-12px_rgba(26,15,12,0.45),0_12px_24px_-8px_rgba(255,123,92,0.12)]"
+        className="animate-scale-in relative flex max-h-[min(92dvh,calc(100dvh-2rem))] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] ring-1 ring-[#FF7B5C]/12 shadow-[0_0_0_1px_rgba(255,123,92,0.08),0_32px_64px_-12px_rgba(26,15,12,0.35),0_12px_24px_-8px_rgba(255,123,92,0.14)]"
         style={{ fontFamily: "var(--font-body)" }}
       >
+        <div className="pointer-events-none absolute inset-0 bg-[#FFF8F5]" aria-hidden />
         <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#FFFAF7] via-white to-[#FFF5F0]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF7B5C]/35 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#FF7B5C]/25"
           aria-hidden
         />
 
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
           <div
-            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-mobile-browser pt-7 sm:px-8 sm:pb-9 sm:pt-8"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-mobile-browser pt-5 sm:px-8 sm:pb-9 sm:pt-7"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <div className="mb-5 flex justify-center">
-              <div className="h-1 w-10 rounded-full bg-[#E0E0E0]" aria-hidden />
-            </div>
+            <div className="mx-auto mb-6 h-1 w-10 shrink-0 rounded-full bg-[#D4D4D4]" aria-hidden />
 
             {staticPreview ? (
               <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-[12px] font-semibold text-amber-900/90">
@@ -202,68 +232,99 @@ export function StartEarlyModal({
               <>
                 <h2
                   id={titleId}
-                  className="mb-5 text-center text-[1.5rem] font-bold leading-[1.2] tracking-tight text-[#1A1A1A] sm:text-[1.75rem]"
+                  className="mb-2 text-center text-[1.5rem] font-bold leading-[1.2] tracking-tight text-[#1A1A1A] sm:text-[1.75rem]"
                   style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
                 >
                   Start your plan early
                 </h2>
 
-                <div className="mb-4 rounded-2xl bg-[#FFF0E8] px-4 py-3.5 text-center">
-                  <p className="text-[15px] font-bold leading-snug text-[#C2410C]">
-                    {trialEndLabel ? (
-                      <>Your plan already renews automatically on {trialEndLabel}.</>
-                    ) : (
-                      <>Your plan renews automatically when your trial ends.</>
-                    )}
-                  </p>
-                  <p className="mt-2 text-sm font-medium leading-relaxed text-[#9A3412]">
-                    Start early and get access to your credits right now.
-                  </p>
+                <p className="mx-auto mb-6 max-w-md text-center text-[14px] leading-snug text-[#6B6B6B] sm:text-[15px]">
+                  {subtitle}
+                </p>
+
+                <div className="mx-auto mb-6 max-w-md rounded-[12px] border border-[#E8E4E0] bg-[#FDF8F5] px-4 py-3 text-center text-[14px] font-medium text-[#6B6B6B] sm:text-[15px]">
+                  <span aria-hidden>🎬</span> {PAID_MONTHLY_VIDEO_LIMIT} videos ·{" "}
+                  <span aria-hidden>✨</span> {PAID_MONTHLY_SCENE_LIMIT} scenes per month
                 </div>
 
-                <div className="mb-5 rounded-full bg-[#F5F5F5] px-4 py-2.5 text-center text-sm font-medium text-[#555555]">
-                  🎬 {PAID_MONTHLY_VIDEO_LIMIT} videos/month · ✨ {PAID_MONTHLY_SCENE_LIMIT}{" "}
-                  scenes/month
-                </div>
-
-                <div className="mb-5 grid grid-cols-2 gap-3">
+                <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setPlan("yearly")}
-                    className={`relative rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${
+                    className={`relative rounded-2xl border-2 p-3 pb-4 pt-4 text-left transition-all sm:p-4 sm:pb-5 sm:pt-5 ${
                       plan === "yearly"
-                        ? "border-[#FF7B5C] bg-[#FFF8F5] shadow-sm"
-                        : "border-[#E5E5E5] bg-white hover:border-[#D4D4D4]"
+                        ? "border-[#FF7B5C] bg-[#FFF0E8] shadow-sm"
+                        : "border-[#E8E4E0] bg-[#FDF8F5] hover:border-[#FFD4C4]"
                     }`}
                   >
-                    <span className="absolute -top-2 right-2 rounded-full bg-[#1A1A1A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-                      Best Value
+                    <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#FF7B5C] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:-top-2.5 sm:px-2.5 sm:text-[10px]">
+                      SAVE {savePct}%
                     </span>
-                    <p className="text-xs font-medium text-[#737373]">Yearly</p>
-                    <p className="mt-1 text-lg font-bold tabular-nums text-[#1A1A1A]">
-                      {STARTER_PLAN_DISPLAY.yearlyEquivalent}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-[#A3A3A3]">
-                      Billed as {STARTER_PLAN_DISPLAY.yearlyTotal}/yr
-                    </p>
+                    <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                      <div className="min-w-0">
+                        <p
+                          className={`text-[13px] font-bold sm:text-[15px] ${
+                            plan === "yearly" ? "text-[#FF7B5C]" : "text-[#9B9B9B]"
+                          }`}
+                        >
+                          Yearly
+                        </p>
+                        <p className="mt-0.5 text-[16px] font-bold tabular-nums text-[#1A1A1A] sm:mt-1 sm:text-[18px]">
+                          {STARTER_PLAN_DISPLAY.yearlyEquivalent.replace("/mo", "")}
+                          <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[14px]">/mo</span>
+                        </p>
+                      </div>
+                      <span
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                          plan === "yearly" ? "border-[#FF7B5C] bg-[#FF7B5C]" : "border-[#CCC]"
+                        }`}
+                      >
+                        {plan === "yearly" ? (
+                          <CheckIcon size={14} weight="bold" className="text-white" />
+                        ) : null}
+                      </span>
+                    </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setPlan("monthly")}
-                    className={`rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${
+                    className={`relative rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${
                       plan === "monthly"
-                        ? "border-[#FF7B5C] bg-[#FFF8F5] shadow-sm"
-                        : "border-[#E5E5E5] bg-white hover:border-[#D4D4D4]"
+                        ? "border-[#1A1A1A] bg-[#FFF8F5] shadow-sm"
+                        : "border-[#E8E4E0] bg-[#FDF8F5] hover:border-[#E0D8D0]"
                     }`}
                   >
-                    <p className="text-xs font-medium text-[#737373]">Monthly</p>
-                    <p className="mt-1 text-lg font-bold tabular-nums text-[#1A1A1A]">
-                      {STARTER_PLAN_DISPLAY.monthly}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-[#A3A3A3]">Billed monthly</p>
+                    <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                      <div className="min-w-0">
+                        <p
+                          className={`text-[13px] font-bold sm:text-[15px] ${
+                            plan === "monthly" ? "text-[#1A1A1A]" : "text-[#9B9B9B]"
+                          }`}
+                        >
+                          Monthly
+                        </p>
+                        <p className="mt-0.5 text-[16px] font-bold tabular-nums text-[#1A1A1A] sm:mt-1 sm:text-[18px]">
+                          {STARTER_PLAN_DISPLAY.monthly.replace("/mo", "")}
+                          <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[14px]">/mo</span>
+                        </p>
+                      </div>
+                      <span
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                          plan === "monthly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
+                        }`}
+                      >
+                        {plan === "monthly" ? (
+                          <CheckIcon size={14} weight="bold" className="text-white" />
+                        ) : null}
+                      </span>
+                    </div>
                   </button>
                 </div>
+
+                <p className="mb-4 text-center text-[11px] leading-relaxed text-[#9B9B9B]">
+                  Upgrades immediately · Renewal date stays the same · Cancel anytime
+                </p>
 
                 {error ? (
                   <p
@@ -281,16 +342,22 @@ export function StartEarlyModal({
                   className="flex h-14 w-full items-center justify-center rounded-full bg-[#FF7B5C] text-base font-bold text-white shadow-[0_4px_14px_-4px_rgba(255,123,92,0.5)] transition active:scale-[0.98] disabled:opacity-60"
                   aria-label={staticPreview ? "Close preview (no charge)" : undefined}
                 >
-                  {busy && !staticPreview ? "Processing…" : primaryLabel}
+                  {busy && !staticPreview ? "Processing…" : "Unlock my credits now"}
                 </button>
+
+                <p className="mt-3 text-center text-[12px] leading-relaxed text-[#9B9B9B] sm:text-[13px]">
+                  {billedLine}
+                </p>
 
                 <button
                   type="button"
                   disabled={busy}
                   onClick={onClose}
-                  className="mt-4 w-full py-2 text-center text-sm text-[#A3A3A3] transition hover:text-[#737373] disabled:opacity-50"
+                  className="mt-4 w-full py-2 text-center text-[14px] font-semibold text-[#6B6B6B] transition hover:text-[#1A1A1A] disabled:opacity-50"
                 >
-                  {trialEndLabel ? (
+                  {trialEndShort != null ? (
+                    <>No thanks, I&apos;ll wait until {trialEndShort}</>
+                  ) : trialEndLabel ? (
                     <>No thanks, I&apos;ll wait until {trialEndLabel}</>
                   ) : (
                     <>No thanks, I&apos;ll wait</>

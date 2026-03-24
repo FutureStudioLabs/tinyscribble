@@ -2,50 +2,32 @@
 
 import { useRouter } from "next/navigation";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
-import { setPendingUpload } from "@/lib/upload-store";
-
-const ACCEPT = "image/jpeg,image/png,image/heic,image/webp";
 
 interface HomeUploadButtonProps {
   className?: string;
 }
 
 /**
- * File input is overlaid on the visible button so the system file sheet / dialog
- * anchors to the same rect as the CTA (not a hidden input at 0,0).
+ * Opens the global file input (see GlobalUpload in layout) so the input survives
+ * navigation to /upload; then navigates so cancel lands on the upload step.
  */
 export function HomeUploadButton({ className }: HomeUploadButtonProps) {
   const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      e.target.value = "";
-      return;
-    }
-    setPendingUpload(file);
-    router.replace("/loading");
-    e.target.value = "";
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("trigger-global-upload"));
+    router.push("/upload");
   };
 
   return (
-    <label
-      className={[className || funnelPrimaryButtonClassName, "relative"]
-        .filter(Boolean)
-        .join(" ")}
+    <button
+      type="button"
+      onClick={handleClick}
+      className={className || funnelPrimaryButtonClassName}
       style={{ fontFamily: "var(--font-body)" }}
-      onClick={() => router.push("/upload")}
     >
-      <input
-        type="file"
-        accept={ACCEPT}
-        className="absolute inset-0 z-10 h-full min-h-[56px] w-full cursor-pointer opacity-0"
-        onChange={handleChange}
-      />
-      <span className="pointer-events-none flex w-full items-center justify-center gap-2">
-        Upload Your Drawing
-        <span className="text-lg">↑</span>
-      </span>
-    </label>
+      Upload Your Drawing
+    </button>
   );
 }

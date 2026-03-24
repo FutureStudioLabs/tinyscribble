@@ -1,7 +1,5 @@
 "use client";
 
-import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
-import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -28,33 +26,18 @@ type HeaderUserAvatarProps = {
   className?: string;
   /** Dashboard-style coral circle with hamburger (menu content unchanged). */
   trigger?: "initials" | "hamburger";
-  /** Hide the small trial quota pill (e.g. when quota shows in the hero card). */
-  hideTrialQuotaBadge?: boolean;
 };
 
 export function HeaderUserAvatar({
   showLoginWhenAnonymous = false,
   className = "",
   trigger = "initials",
-  hideTrialQuotaBadge = false,
 }: HeaderUserAvatarProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined);
-  const [trialQuota, setTrialQuota] = useState<
-    NonNullable<BillingEntitlementPayload["trialVideoQuota"]> | null | undefined
-  >(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  const loadTrialQuota = useCallback(() => {
-    void fetch("/api/billing/entitlement", { credentials: "include" })
-      .then((r) => r.json())
-      .then((data: BillingEntitlementPayload) => {
-        setTrialQuota(data.trialVideoQuota ?? null);
-      })
-      .catch(() => setTrialQuota(null));
-  }, []);
 
   useEffect(() => {
     const sb = createClient();
@@ -66,28 +49,6 @@ export function HeaderUserAvatar({
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (user === undefined) return;
-    if (user === null) {
-      setTrialQuota(undefined);
-      return;
-    }
-    loadTrialQuota();
-  }, [user, loadTrialQuota]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    const onVis = () => {
-      if (document.visibilityState === "visible") loadTrialQuota();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    window.addEventListener(TRIAL_VIDEO_QUOTA_CHANGED_EVENT, loadTrialQuota);
-    return () => {
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener(TRIAL_VIDEO_QUOTA_CHANGED_EVENT, loadTrialQuota);
-    };
-  }, [user?.id, loadTrialQuota]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -137,20 +98,10 @@ export function HeaderUserAvatar({
 
   return (
     <div className={`relative flex items-center gap-2 ${className}`} ref={wrapRef}>
-      {!hideTrialQuotaBadge && trialQuota != null ? (
-        <span
-          className="max-w-[min(100vw-8rem,10rem)] shrink truncate rounded-full border border-[#E8E8E8] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold leading-tight text-[#4A4A4A] shadow-sm sm:max-w-none sm:px-3 sm:py-1.5 sm:text-xs"
-          style={{ fontFamily: "var(--font-body)" }}
-          title="Trial videos remaining"
-        >
-          {trialQuota.remaining} / {trialQuota.limit} Remains
-        </span>
-      ) : null}
       <button
         type="button"
         onClick={() => {
           setMenuOpen((o) => !o);
-          if (user?.id) loadTrialQuota();
         }}
         className={`flex shrink-0 items-center justify-center rounded-full bg-[#F28B66] text-white shadow-md shadow-[#F28B66]/35 transition hover:bg-[#E87A5A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7B5C] focus-visible:ring-offset-2 ${
           isHamburger ? "h-11 w-11 flex-col gap-[5px] p-0" : "h-10 w-10 bg-gradient-to-br from-[#FF7B5C] to-[#FF9E6C] text-sm font-bold ring-2 ring-white/90 hover:opacity-95"
@@ -203,15 +154,6 @@ export function HeaderUserAvatar({
             onClick={() => setMenuOpen(false)}
           >
             Billing
-          </Link>
-          <Link
-            href="/login?switch_account=1"
-            role="menuitem"
-            className="block px-3 py-2.5 text-sm font-semibold text-[#6B6B6B] transition-colors hover:bg-[#FFF8F5]"
-            style={{ fontFamily: "var(--font-body)" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            Use another account
           </Link>
           <button
             type="button"

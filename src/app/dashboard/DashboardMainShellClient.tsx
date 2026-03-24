@@ -26,7 +26,7 @@ export function DashboardMainShellClient({ greetingName, children }: Props) {
       <>
         <header className="relative z-40 flex shrink-0 items-center justify-between bg-white px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
           <Logo />
-          <HeaderUserAvatar trigger="hamburger" hideTrialQuotaBadge />
+          <HeaderUserAvatar trigger="hamburger" />
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col px-4">

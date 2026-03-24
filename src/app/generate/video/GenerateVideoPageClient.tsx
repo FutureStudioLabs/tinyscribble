@@ -13,8 +13,7 @@ import { TRIAL_VIDEO_EXHAUSTED_CODE, TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/c
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { getGeneratedVariantKeys } from "@/lib/generated-variants-cache";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
-import { ArrowLeftIcon, VideoCameraIcon } from "@phosphor-icons/react";
-import Link from "next/link";
+import { ArrowUpRight, DownloadSimple } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -29,6 +28,10 @@ function videoCacheKey(cgiKey: string) {
   return `tinyscribble:video-for:${cgiKey.replace(/\//g, "_")}`;
 }
 
+function cgiMediaUrl(key: string) {
+  return `/api/media?key=${encodeURIComponent(key)}`;
+}
+
 type VideoPhase = "idle" | "starting" | "polling" | "complete" | "error";
 
 type BootstrapStep = "entitlement" | "funnel";
@@ -36,9 +39,10 @@ type BootstrapStep = "entitlement" | "funnel";
 export function GenerateVideoPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const variant = Math.min(2, Math.max(0, parseInt(searchParams.get("v") || "0", 10) || 0));
+  const urlVariantRaw = Math.max(0, parseInt(searchParams.get("v") || "0", 10) || 0);
 
   const [baseReady, setBaseReady] = useState(false);
+  const [resolvedVariantIndex, setResolvedVariantIndex] = useState(0);
   const [cgiKey, setCgiKey] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [bootstrapStep, setBootstrapStep] = useState<BootstrapStep | null>("entitlement");
@@ -71,7 +75,7 @@ export function GenerateVideoPageClient() {
     }
 
     function goPaywall() {
-      const next = `/generate/video?v=${variant}`;
+      const next = `/generate/video?v=${urlVariantRaw}`;
       window.location.assign(`/paywall?next=${encodeURIComponent(next)}`);
     }
 
@@ -115,8 +119,14 @@ export function GenerateVideoPageClient() {
         return;
       }
 
-      const keys = getGeneratedVariantKeys(pending.r2Key);
-      const ck = keys?.[variant];
+      const cached = getGeneratedVariantKeys(pending.r2Key);
+      const keyList = cached?.keys;
+      if (!keyList?.length) {
+        goGenerate();
+        return;
+      }
+      const v = Math.min(Math.max(0, keyList.length - 1), urlVariantRaw);
+      const ck = keyList[v];
       if (!ck) {
         goGenerate();
         return;
@@ -124,6 +134,7 @@ export function GenerateVideoPageClient() {
 
       if (!cancelled) {
         setPreviewUrl(pending.previewUrl);
+        setResolvedVariantIndex(v);
         setCgiKey(ck);
         setBootstrapStep(null);
         setBaseReady(true);
@@ -133,7 +144,7 @@ export function GenerateVideoPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [variant]);
+  }, [urlVariantRaw]);
 
   const startVideoGeneration = useCallback(async (cgi: string) => {
     if (postInFlightRef.current) return;
@@ -312,6 +323,54 @@ export function GenerateVideoPageClient() {
     void startVideoGeneration(cgiKey);
   }
 
+  const handleShareVideo = useCallback(async () => {
+    if (!videoMediaUrl) return;
+    try {
+      const res = await fetch(videoMediaUrl, { credentials: "include" });
+      if (!res.ok) throw new Error(`Video fetch failed (${res.status})`);
+      const blob = await res.blob();
+      const mime =
+        blob.type ||
+        res.headers.get("content-type")?.split(";")[0]?.trim() ||
+        "video/mp4";
+      const file = new File([blob], "tinyscribble-animation.mp4", { type: mime });
+
+      const data: ShareData = {
+        files: [file],
+        title: "My child's drawing!",
+      };
+
+      const canUseNativeShare =
+        typeof navigator.share === "function" &&
+        (!navigator.canShare || navigator.canShare(data));
+
+      if (canUseNativeShare) {
+        try {
+          await navigator.share(data);
+          return;
+        } catch (e) {
+          if (e instanceof DOMException && e.name === "AbortError") return;
+          /* fall through: e.g. desktop Chrome with flaky file share — save file instead */
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      try {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "tinyscribble-animation.mp4";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("share video", e);
+    }
+  }, [videoMediaUrl]);
+
   if (!baseReady || !cgiKey || !previewUrl) {
     const bootTitle =
       bootstrapStep === "funnel"
@@ -320,7 +379,7 @@ export function GenerateVideoPageClient() {
     const bootBody =
       bootstrapStep === "funnel"
         ? "We’re pulling in your drawing and the CGI versions from this session. If you opened this link in a new device or private window, start again from Upload."
-        : "Verifying your subscription — usually just a few seconds, especially right after checkout.";
+        : "This usually just takes a few seconds";
 
     return (
       <>
@@ -401,16 +460,16 @@ export function GenerateVideoPageClient() {
                             Dashboard upload
                           </button>
                         </>
-                      ) : (
+                      ) : bootstrapStep === "funnel" ? (
                         <FunnelPrimaryButton
                           type="button"
                           disabled
                           className="w-full cursor-wait !opacity-90"
                           style={{ fontFamily: "var(--font-body)" }}
                         >
-                          {bootstrapStep === "funnel" ? "Loading your artwork…" : "Checking your plan…"}
+                          Loading your artwork…
                         </FunnelPrimaryButton>
-                      )}
+                      ) : null}
                     </div>
                   </FunnelBottomDock>
                 </div>
@@ -442,13 +501,21 @@ export function GenerateVideoPageClient() {
               <div className="flex min-h-0 flex-1 flex-col py-4">
                 <div className="mx-auto flex w-full max-w-md flex-col items-center py-2 text-center">
                   <div
-                    className="mb-4"
+                    className="mb-4 w-full max-w-[min(100%,calc(54dvh*9/16))]"
                     style={{
                       animation: "fade-in 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards",
                       opacity: 0,
                     }}
                   >
-                    <SketchMagicLoader />
+                    <div className="relative aspect-[9/16] w-full animate-pulse overflow-hidden rounded-2xl shadow-[0_16px_48px_-20px_rgba(255,123,92,0.4)] ring-2 ring-[#FF7B5C]/35 ring-offset-2 ring-offset-[#FFF8F5]">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- /api/media proxy URL */}
+                      <img
+                        src={cgiMediaUrl(cgiKey)}
+                        alt={`CGI version ${resolvedVariantIndex + 1} — we’re animating this frame`}
+                        className="h-full w-full object-cover"
+                        draggable={false}
+                      />
+                    </div>
                   </div>
                   <h1
                     className="mb-2 text-[32px] font-bold text-[#1A1A1A]"
@@ -462,10 +529,6 @@ export function GenerateVideoPageClient() {
                   >
                     {VIDEO_MESSAGES[messageIndex]}
                   </p>
-                  <div className="mb-1 flex w-full items-center justify-between gap-3 text-xs text-[#9B9B9B]">
-                    <span style={{ fontFamily: "var(--font-body)" }}>Progress</span>
-                    <span style={{ fontFamily: "var(--font-body)" }}>{progress}%</span>
-                  </div>
                   <div className="mb-4 h-1 w-full overflow-hidden rounded-full bg-white/60">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-[#FF7B5C] to-[#FF9E6C] transition-[width] duration-500 ease-out"
@@ -515,40 +578,12 @@ export function GenerateVideoPageClient() {
               </div>
             ) : showComplete ? (
               <div className="w-full min-w-0 pb-4 pt-1">
-                <button
-                  type="button"
-                  onClick={() => router.push("/generate")}
-                  className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  <ArrowLeftIcon size={18} weight="bold" aria-hidden />
-                  Back to versions
-                </button>
-
-                <div className="mb-3 flex justify-center">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F8F0] px-3 py-1 text-xs font-semibold text-[#1B5E3F]">
-                    <VideoCameraIcon size={14} weight="bold" aria-hidden />
-                    Your video is ready
-                  </span>
-                </div>
-
                 <h1
-                  className="mb-2 text-center text-[32px] font-bold text-[#1A1A1A]"
+                  className="mb-6 text-center text-[32px] font-bold text-[#1A1A1A]"
                   style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
                 >
-                  Here&apos;s your animation
+                  🎬 Your video is ready!
                 </h1>
-                <p
-                  className="mb-6 text-center text-sm text-[#6B6B6B]"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  From <strong className="font-semibold text-[#1A1A1A]">version {variant + 1}</strong>
-                  . Download or share from your device — you can also start another from{" "}
-                  <Link href="/dashboard/upload" className="font-semibold text-[#FF7B5C] underline">
-                    Upload
-                  </Link>
-                  .
-                </p>
 
                 <div className="mx-auto mb-6 aspect-[9/16] w-full max-w-[min(100%,calc(85dvh*9/16))] overflow-hidden rounded-2xl border border-white/80 bg-black">
                   <video
@@ -560,29 +595,27 @@ export function GenerateVideoPageClient() {
                   />
                 </div>
 
-                <p
-                  className="mb-2 rounded-xl border border-[#FF7B5C]/20 bg-[#FFF8F5] p-4 text-sm text-[#6B6B6B]"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  <strong className="text-[#1A1A1A]">Tip:</strong> find stills in{" "}
-                  <Link href="/dashboard/gallery" className="font-semibold text-[#FF7B5C] underline">
-                    Gallery
-                  </Link>{" "}
-                  · manage your plan in{" "}
-                  <Link href="/dashboard/billing" className="font-semibold text-[#FF7B5C] underline">
-                    Billing
-                  </Link>
-                  .
-                </p>
-
                 <FunnelBottomDock>
-                  <Link
-                    href="/dashboard/upload"
-                    className={`${funnelPrimaryButtonClassName} block w-full text-center no-underline`}
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    Upload another drawing
-                  </Link>
+                  <div className="mx-auto flex w-full max-w-md flex-row gap-3">
+                    <a
+                      href={videoMediaUrl ?? undefined}
+                      download="tinyscribble-animation.mp4"
+                      className={`${funnelPrimaryButtonClassName} flex flex-1 items-center justify-center gap-2 no-underline`}
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      <DownloadSimple className="h-5 w-5 shrink-0 text-white" weight="bold" aria-hidden />
+                      Download
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void handleShareVideo()}
+                      className="flex h-14 min-h-[56px] flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] bg-transparent px-4 text-base font-bold text-[#FF7B5C] transition-colors hover:bg-[#FF7B5C]/8 active:scale-[0.98]"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      <ArrowUpRight className="h-5 w-5 shrink-0" weight="bold" aria-hidden />
+                      Share
+                    </button>
+                  </div>
                 </FunnelBottomDock>
               </div>
             ) : (

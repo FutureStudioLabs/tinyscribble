@@ -1,0 +1,98 @@
+import { PAID_MONTHLY_SCENE_LIMIT } from "@/constants/plan";
+import type { BillingCustomerStripeRow } from "@/lib/billing-customer-read";
+import { fetchBillingCustomerStripeRowForUser } from "@/lib/billing-customer-read";
+import { getStripe } from "@/lib/stripe-server";
+import {
+  countGalleryGeneratedForUser,
+  countGalleryGeneratedForUserSince,
+} from "@/lib/trial-gallery-counts";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type Stripe from "stripe";
+
+type StripeSubscriptionFields = {
+  current_period_start?: number;
+  start_date?: number;
+};
+
+/**
+ * Stripe `active` / `past_due` — monthly scene credits apply (not `trialing`).
+ */
+export function isPaidPlanStatus(status: string | null | undefined): boolean {
+  const s = status?.trim().toLowerCase() ?? "";
+  return s === "active" || s === "past_due";
+}
+
+async function loadStripeSubscriptionForBillingRow(
+  stripe: Stripe,
+  row: BillingCustomerStripeRow
+): Promise<StripeSubscriptionFields | null> {
+  if (row.stripe_subscription_id) {
+    try {
+      return (await stripe.subscriptions.retrieve(row.stripe_subscription_id, {
+        expand: ["items.data.price"],
+      })) as StripeSubscriptionFields;
+    } catch (e) {
+      console.error("paid-scene-quota: subscription retrieve", e);
+    }
+  }
+  if (row.stripe_customer_id) {
+    try {
+      const list = await stripe.subscriptions.list({
+        customer: row.stripe_customer_id,
+        status: "all",
+        limit: 10,
+      });
+      const sub = list.data.find((s) =>
+        ["active", "trialing", "past_due"].includes(s.status)
+      );
+      return sub ? (sub as unknown as StripeSubscriptionFields) : null;
+    } catch (e) {
+      console.error("paid-scene-quota: subscription list by customer", e);
+    }
+  }
+  return null;
+}
+
+/**
+ * Remaining scene credits in the current billing period for paid plans.
+ * Returns `null` when the user is not on `active` / `past_due`.
+ */
+export async function getPaidSceneRemainingForUser(
+  supabase: SupabaseClient,
+  user: Pick<User, "id" | "email">,
+  billingStatus: string | null
+): Promise<number | null> {
+  if (!isPaidPlanStatus(billingStatus)) return null;
+
+  const { row: stripeRow } = await fetchBillingCustomerStripeRowForUser(supabase, user);
+  if (!stripeRow?.stripe_subscription_id && !stripeRow?.stripe_customer_id) {
+    const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
+    return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+  }
+
+  try {
+    const stripe = getStripe();
+    const sub = stripeRow ? await loadStripeSubscriptionForBillingRow(stripe, stripeRow) : null;
+    if (sub) {
+      const periodStartSec =
+        typeof sub.current_period_start === "number" && sub.current_period_start > 0
+          ? sub.current_period_start
+          : typeof sub.start_date === "number" && sub.start_date > 0
+            ? sub.start_date
+            : null;
+      if (periodStartSec != null) {
+        const scenesUsed = await countGalleryGeneratedForUserSince(
+          supabase,
+          user.id,
+          periodStartSec * 1000
+        );
+        return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+      }
+    }
+  } catch (e) {
+    console.error("paid-scene-quota: stripe period", e);
+  }
+
+  const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
+  return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+}

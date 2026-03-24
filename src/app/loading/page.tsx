@@ -109,10 +109,10 @@ export default function LoadingPage() {
             <div className="mx-auto flex w-full max-w-md grow-0 flex-col items-center pt-6 text-center">
             {uploadError ? <ErrorStateIcon className="mb-4" size={56} /> : null}
 
-            {/* Preview only after upload succeeds — hidden while upload is in progress */}
+            {/* Preview only after upload succeeds — hidden while upload is in progress (3:4 matches typical drawings) */}
             {uploadComplete && !uploadError && upload?.previewUrl ? (
               <div
-                className="relative mx-auto mb-6 aspect-[9/16] w-full max-w-[min(100%,calc(54dvh*9/16))] overflow-hidden rounded-2xl"
+                className="relative mx-auto mb-6 aspect-[3/4] w-full max-w-[min(100%,calc(54dvh*3/4))] overflow-hidden rounded-2xl"
                 style={{
                   animation: "scale-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards",
                   opacity: 0,
@@ -148,7 +148,7 @@ export default function LoadingPage() {
                   opacity: 0,
                 }}
               >
-                Ready to bring it to life?
+                Your drawing is ready!
               </p>
             ) : (
               <h1
@@ -193,16 +193,6 @@ export default function LoadingPage() {
 
                 {/* Progress bar — real bytes sent (XHR upload events) */}
                 <div
-                  className="mb-1 flex w-full items-center justify-between gap-3 text-xs text-[#9B9B9B]"
-                  style={{
-                    animation: "fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) 500ms forwards",
-                    opacity: 0,
-                  }}
-                >
-                  <span style={{ fontFamily: "var(--font-body)" }}>Upload</span>
-                  <span style={{ fontFamily: "var(--font-body)" }}>{progress}%</span>
-                </div>
-                <div
                   className="h-1 w-full overflow-hidden rounded-full bg-white/60"
                   style={{
                     animation: "fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) 500ms forwards",
@@ -227,7 +217,7 @@ export default function LoadingPage() {
                       className="w-full"
                       style={{ fontFamily: "var(--font-body)" }}
                     >
-                      Bring your image to life
+                      Bring your drawing to life ✨
                     </FunnelPrimaryButton>
                   )}
                   {uploadError && (

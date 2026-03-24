@@ -2,16 +2,22 @@ import { BillingApiError } from "@/lib/billing-api-error";
 
 type StreamLine =
   | { type: "progress"; percent: number }
-  | { type: "complete"; keys: string[] }
+  | { type: "complete"; keys: string[]; sceneBatchMode?: "single" | "triple" }
   | { type: "error"; error: string };
+
+export type StreamGenerateImagesResult = {
+  keys: string[];
+  sceneBatchMode: "single" | "triple";
+};
 
 /**
  * Calls POST /api/generate-images (NDJSON stream) and reports real server progress.
+ * Paid subscribers get one scene per run (`single`); trial and others get three (`triple`).
  */
 export async function streamGenerateImages(
   r2Key: string,
   onProgress: (percent: number) => void
-): Promise<string[]> {
+): Promise<StreamGenerateImagesResult> {
   const res = await fetch("/api/generate-images", {
     method: "POST",
     headers: {
@@ -44,6 +50,7 @@ export async function streamGenerateImages(
   const decoder = new TextDecoder();
   let buffer = "";
   let keys: string[] | null = null;
+  let sceneBatchMode: "single" | "triple" | null = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -64,6 +71,9 @@ export async function streamGenerateImages(
         onProgress(Math.min(99, Math.max(0, msg.percent)));
       } else if (msg.type === "complete") {
         keys = msg.keys;
+        if (msg.sceneBatchMode === "single" || msg.sceneBatchMode === "triple") {
+          sceneBatchMode = msg.sceneBatchMode;
+        }
       } else if (msg.type === "error") {
         throw new Error(msg.error);
       }
@@ -80,6 +90,9 @@ export async function streamGenerateImages(
         onProgress(Math.min(99, Math.max(0, msg.percent)));
       } else if (msg.type === "complete") {
         keys = msg.keys;
+        if (msg.sceneBatchMode === "single" || msg.sceneBatchMode === "triple") {
+          sceneBatchMode = msg.sceneBatchMode;
+        }
       } else if (msg.type === "error") {
         throw new Error(msg.error);
       }
@@ -92,10 +105,13 @@ export async function streamGenerateImages(
     }
   }
 
-  if (!keys || keys.length !== 3) {
+  if (!keys || keys.length < 1) {
     throw new Error("Invalid response from server");
   }
 
+  const resolvedMode: "single" | "triple" =
+    sceneBatchMode ?? (keys.length === 1 ? "single" : "triple");
+
   onProgress(100);
-  return keys;
+  return { keys, sceneBatchMode: resolvedMode };
 }

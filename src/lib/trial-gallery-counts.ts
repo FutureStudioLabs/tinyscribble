@@ -17,7 +17,7 @@ export async function countGalleryVideosForUser(
   return count ?? 0;
 }
 
-/** CGI stills persisted under `generated/` (each batch adds 3). */
+/** CGI stills persisted under `generated/` (trial: 3 per batch; paid: 1 per batch). */
 export async function countGalleryGeneratedForUser(
   supabase: SupabaseClient,
   userId: string

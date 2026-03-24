@@ -1,5 +1,6 @@
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { LoginIntroHero } from "@/components/auth/LoginIntroHero";
 import { LoginStatus } from "@/components/auth/LoginStatus";
 import { LogoMark } from "@/components/Logo";
 import {
@@ -16,7 +17,10 @@ export const metadata = {
   description: "Sign in with a 6-digit code — no password.",
 };
 
-type Search = { next?: string; switch_account?: string };
+type Search = {
+  next?: string;
+  switch_account?: string;
+};
 
 export default async function LoginPage({
   searchParams,
@@ -57,35 +61,16 @@ export default async function LoginPage({
 
       <main className="flex min-h-0 flex-1 flex-col px-5 pb-8 pt-6">
         <div className="mx-auto w-full max-w-md shrink-0 text-center">
-          <h1
-            className="mb-2 text-[28px] font-bold text-[#1A1A1A] sm:text-[32px]"
-            style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
+          <Suspense
+            fallback={
+              <div
+                className="mb-6 min-h-[7.5rem]"
+                aria-hidden
+              />
+            }
           >
-            {isSwitchAccountFlow ? "Switch account" : "Log in"}
-          </h1>
-          <p
-            className="mb-6 text-base text-[#6B6B6B]"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            {isSwitchAccountFlow ? (
-              <>
-                You&apos;re already signed in.{" "}
-                <strong className="text-[#1A1A1A]">Sign out</strong> below to use a different email,
-                or continue to your dashboard.
-              </>
-            ) : (
-              <>Enter your email and we&apos;ll send you a 6-digit code. No password.</>
-            )}
-          </p>
-          {isSwitchAccountFlow ? (
-            <Link
-              href="/dashboard"
-              className="mb-6 inline-flex text-sm font-semibold text-[#1A1A1A] underline decoration-[#C8C8C8] underline-offset-2 transition-colors hover:decoration-[#1A1A1A]"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Go to dashboard →
-            </Link>
-          ) : null}
+            <LoginIntroHero isSwitchAccountFlow={isSwitchAccountFlow} />
+          </Suspense>
         </div>
 
         <LoginStatus />

@@ -35,7 +35,6 @@ const COPY = {
     label: "Yearly",
     display: "$3.99",
     suffix: "/mo",
-    sub: "$47.99/yearly",
     stripeNote: "$47.99 per year ($3.99/mo)",
   },
 } as const;
@@ -344,9 +343,6 @@ export function TrialPaywallScreen() {
                   <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[13px]">
                     {COPY.yearly.suffix}
                   </span>
-                </p>
-                <p className="mt-0.5 text-[10px] font-medium text-[#9B9B9B] sm:mt-1 sm:text-[11px]">
-                  {COPY.yearly.sub}
                 </p>
               </div>
               <span

@@ -1,6 +1,5 @@
 "use client";
 
-import { CheckIcon } from "@phosphor-icons/react";
 import { ErrorStateIcon } from "@/components/ErrorStateIcon";
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
 import { Logo } from "@/components/Logo";
@@ -99,17 +98,7 @@ export default function UploadPage() {
                   onChange={handleChange}
                 />
                 <span className="pointer-events-none flex w-full items-center justify-center gap-2">
-                  {isUploading ? (
-                    <>
-                      <CheckIcon size={24} weight="bold" />
-                      Uploading…
-                    </>
-                  ) : (
-                    <>
-                      Upload Your Drawing
-                      <span className="text-lg">↑</span>
-                    </>
-                  )}
+                  {isUploading ? "Uploading…" : "Upload Your Drawing"}
                 </span>
               </label>
               <FunnelUploadGreatExamples

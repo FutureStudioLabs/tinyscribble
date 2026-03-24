@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, LockIcon } from "@phosphor-icons/react";
+import { LockIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ErrorStateIcon } from "@/components/ErrorStateIcon";
@@ -471,19 +471,7 @@ export function DashboardUploadClient() {
                 className="w-full shadow-[0_4px_14px_-4px_rgba(255,123,92,0.45)] disabled:!opacity-90"
                 style={{ fontFamily: "var(--font-body)" }}
               >
-                {isUploading ? (
-                  <>
-                    <CheckIcon size={24} weight="bold" />
-                    {DASHBOARD_COPY.upload.starting}
-                  </>
-                ) : (
-                  <>
-                    {DASHBOARD_COPY.upload.uploadCta}
-                    <span className="text-lg" aria-hidden>
-                      ↑
-                    </span>
-                  </>
-                )}
+                {isUploading ? DASHBOARD_COPY.upload.starting : DASHBOARD_COPY.upload.uploadCta}
               </FunnelPrimaryButton>
               <DashboardUploadLegal />
             </div>

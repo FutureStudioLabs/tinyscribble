@@ -177,6 +177,25 @@ body {
   animation: magic-mote-rise 2.8s ease-out infinite;
 }
 
+/* /generate: subtle pulse on the user’s drawing while AI runs */
+@keyframes drawing-preview-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: brightness(1.06) saturate(1.08);
+  }
+}
+
+.animate-drawing-preview-pulse {
+  transform-origin: center center;
+  animation: drawing-preview-pulse 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+
 /**
  * Mobile Safari / Chrome: bottom toolbars sit over `position: sticky; bottom: 0` and scroll-end CTAs.
  * `env(safe-area-inset-bottom)` covers the home indicator only, not the browser chrome.

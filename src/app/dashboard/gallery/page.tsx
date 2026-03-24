@@ -166,8 +166,9 @@ export default function DashboardGalleryPage() {
     else if (videoItems.length === 0 && imageItems.length > 0) setMediaTab("scene");
   }, [loading, items.length, imageItems.length, videoItems.length]);
 
-  const newHref = mediaTab === "scene" ? "/dashboard/upload" : "/generate/video";
-  const newLabel = mediaTab === "scene" ? "New scene" : "New video";
+  /** Upload a drawing/scene first; videos are created from the Generate flow, not uploaded here. */
+  const newSceneHref = "/dashboard/upload";
+  const newSceneLabel = "New scene";
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
@@ -212,27 +213,18 @@ export default function DashboardGalleryPage() {
                   className="text-sm leading-relaxed text-[#6B6B6B]"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
-                  Finished work will show up here. Start with{" "}
-                  <strong className="font-semibold text-[#1A1A1A]">New scene</strong> or{" "}
-                  <strong className="font-semibold text-[#1A1A1A]">New video</strong> below.
+                  Finished work will show up here. Start with a{" "}
+                  <strong className="font-semibold text-[#1A1A1A]">New scene</strong> — upload a drawing,
+                  then you can create videos from Generate.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex justify-center">
                   <Link
-                    href="/dashboard/upload"
-                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
+                    href={newSceneHref}
+                    className="flex aspect-square w-full max-w-[11rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                   >
                     <PlusIcon size={32} weight="bold" />
                     <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                      New scene
-                    </span>
-                  </Link>
-                  <Link
-                    href="/generate/video"
-                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
-                  >
-                    <PlusIcon size={32} weight="bold" />
-                    <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                      New video
+                      {newSceneLabel}
                     </span>
                   </Link>
                 </div>
@@ -254,16 +246,16 @@ export default function DashboardGalleryPage() {
                 >
                   {mediaTab === "scene"
                     ? "No scenes saved yet."
-                    : "No videos saved yet."}
+                    : "No videos saved yet. Upload a new scene to create one from Generate."}
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex justify-center">
                   <Link
-                    href={newHref}
-                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
+                    href={newSceneHref}
+                    className="flex aspect-square w-full max-w-[11rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                   >
                     <PlusIcon size={32} weight="bold" />
                     <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                      {newLabel}
+                      {newSceneLabel}
                     </span>
                   </Link>
                 </div>
@@ -317,12 +309,12 @@ export default function DashboardGalleryPage() {
                 })}
 
                 <Link
-                  href={newHref}
+                  href={newSceneHref}
                   className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                 >
                   <PlusIcon size={32} weight="bold" />
                   <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                    {newLabel}
+                    {newSceneLabel}
                   </span>
                 </Link>
               </div>

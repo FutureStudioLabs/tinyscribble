@@ -3,13 +3,14 @@
 import { SkipTrialModal } from "@/components/trial/SkipTrialModal";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
-import { VideoCameraIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Props = {
   activeVariant: number;
+  /** How many CGI variants exist for this upload (default 3 for legacy triple flow). */
+  variantCount?: number;
 };
 
 type Gate =
@@ -21,7 +22,7 @@ type Gate =
  * - Not signed in → paywall (sign up + subscribe)
  * - Signed in, not subscribed → paywall
  */
-export function CreateVideoCta({ activeVariant }: Props) {
+export function CreateVideoCta({ activeVariant, variantCount = 3 }: Props) {
   const router = useRouter();
   const [gate, setGate] = useState<Gate>({ phase: "loading" });
   const [skipTrialOpen, setSkipTrialOpen] = useState(false);
@@ -69,21 +70,19 @@ export function CreateVideoCta({ activeVariant }: Props) {
     };
   }, []);
 
-  const v = Math.min(2, Math.max(0, activeVariant));
+  const maxIdx = Math.max(0, variantCount - 1);
+  const v = Math.min(maxIdx, Math.max(0, activeVariant));
   const videoPath = `/generate/video?v=${v}`;
   const paywallHref = `/paywall?next=${encodeURIComponent(videoPath)}`;
 
   if (gate.phase === "loading") {
     return (
-      <button
-        type="button"
-        disabled
-        className={`${funnelPrimaryButtonClassName} cursor-wait opacity-80`}
-        style={{ fontFamily: "var(--font-body)" }}
-      >
-        <VideoCameraIcon size={22} weight="bold" aria-hidden />
-        Checking your plan…
-      </button>
+      <div
+        role="status"
+        aria-busy="true"
+        aria-label="Loading"
+        className="flex h-14 min-h-[56px] w-full animate-pulse rounded-full bg-[#FF7B5C]/20"
+      />
     );
   }
 
@@ -105,10 +104,9 @@ export function CreateVideoCta({ activeVariant }: Props) {
           }}
           className={funnelPrimaryButtonClassName}
           style={{ fontFamily: "var(--font-body)" }}
-          aria-label={`Create video from version ${v + 1}`}
+          aria-label={`Bring it to life from version ${v + 1}`}
         >
-          <VideoCameraIcon size={22} weight="bold" aria-hidden />
-          Create video
+          Bring it to life 🎬
         </button>
       </>
     );
@@ -119,10 +117,9 @@ export function CreateVideoCta({ activeVariant }: Props) {
       href={paywallHref}
       className={funnelPrimaryButtonClassName}
       style={{ fontFamily: "var(--font-body)" }}
-      aria-label={`Create video from version ${v + 1} — subscribe to continue`}
+      aria-label={`Bring it to life from version ${v + 1} — subscribe to continue`}
     >
-      <VideoCameraIcon size={22} weight="bold" aria-hidden />
-      Create video
+      Bring it to life 🎬
     </Link>
   );
 }

@@ -1,3 +1,4 @@
+import { PAID_SCENE_LIMIT_CODE } from "@/constants/plan";
 import {
   TRIAL_FREE_IMAGE_LIMIT,
   TRIAL_IMAGE_BATCH_SIZE,
@@ -5,6 +6,7 @@ import {
 } from "@/constants/trial";
 import { generateNanoBananaImage } from "@/lib/apiyi-image";
 import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
+import { getPaidSceneRemainingForUser } from "@/lib/paid-scene-quota";
 import { getPresignedGetUrl, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryGeneratedForUser } from "@/lib/trial-gallery-counts";
@@ -36,9 +38,33 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  let billingStatus: string | null = null;
+  let billingError: string | null = null;
   if (user?.id) {
-    const { status, errorMessage } = await fetchBillingCustomerStatusForUser(supabase, user);
-    if (!errorMessage && status?.trim().toLowerCase() === "trialing") {
+    const b = await fetchBillingCustomerStatusForUser(supabase, user);
+    billingStatus = b.status;
+    billingError = b.errorMessage;
+  }
+
+  let batchSize = 3;
+  let sceneBatchMode: "single" | "triple" = "triple";
+
+  if (user?.id) {
+    const paidRemaining = await getPaidSceneRemainingForUser(supabase, user, billingStatus);
+    if (paidRemaining != null) {
+      if (paidRemaining < 1) {
+        return NextResponse.json(
+          {
+            error:
+              "You've used all your scene credits for this billing period. They reset on your next renewal.",
+            code: PAID_SCENE_LIMIT_CODE,
+          },
+          { status: 403 }
+        );
+      }
+      batchSize = 1;
+      sceneBatchMode = "single";
+    } else if (!billingError && billingStatus?.trim().toLowerCase() === "trialing") {
       const used = await countGalleryGeneratedForUser(supabase, user.id);
       if (used + TRIAL_IMAGE_BATCH_SIZE > TRIAL_FREE_IMAGE_LIMIT) {
         return NextResponse.json(
@@ -69,39 +95,27 @@ export async function POST(request: NextRequest) {
         let finishedImages = 0;
         const onImageDone = () => {
           finishedImages += 1;
-          const pct = 8 + Math.round((finishedImages / 3) * 62);
+          const pct = 8 + Math.round((finishedImages / batchSize) * 62);
           push({ type: "progress", percent: pct });
         };
 
-        const [buf1, buf2, buf3] = await Promise.all([
-          generateNanoBananaImage(drawingUrl).then((b) => {
-            onImageDone();
-            return b;
-          }),
-          generateNanoBananaImage(drawingUrl).then((b) => {
-            onImageDone();
-            return b;
-          }),
-          generateNanoBananaImage(drawingUrl).then((b) => {
-            onImageDone();
-            return b;
-          }),
-        ]);
+        const buffers = await Promise.all(
+          Array.from({ length: batchSize }, () =>
+            generateNanoBananaImage(drawingUrl).then((b) => {
+              onImageDone();
+              return b;
+            })
+          )
+        );
 
         push({ type: "progress", percent: 74 });
 
         const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-        const keys = [
-          `generated/${stamp}-1.png`,
-          `generated/${stamp}-2.png`,
-          `generated/${stamp}-3.png`,
-        ] as const;
+        const keys = buffers.map((_, i) => `generated/${stamp}-${i + 1}.png`);
 
-        await Promise.all([
-          putObjectBuffer(keys[0], buf1, "image/png"),
-          putObjectBuffer(keys[1], buf2, "image/png"),
-          putObjectBuffer(keys[2], buf3, "image/png"),
-        ]);
+        await Promise.all(
+          buffers.map((buf, i) => putObjectBuffer(keys[i], buf, "image/png"))
+        );
 
         if (streamUser?.id) {
           const { error: galleryErr } = await supabase.from("gallery_items").insert(
@@ -111,7 +125,7 @@ export async function POST(request: NextRequest) {
         }
 
         push({ type: "progress", percent: 94 });
-        push({ type: "complete", keys: [...keys] });
+        push({ type: "complete", keys, sceneBatchMode });
       } catch (err) {
         console.error("generate-images:", err);
         push({

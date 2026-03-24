@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         trial_period_days: STARTER_TRIAL_DAYS,
         metadata,
       },
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/login?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}${cancelPath}`,
       metadata,
       client_reference_id: supabaseUserId || undefined,

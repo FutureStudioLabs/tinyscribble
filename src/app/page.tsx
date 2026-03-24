@@ -135,24 +135,14 @@ export default async function Home() {
             className="text-center text-[32px] sm:text-[28px] font-bold text-[#1A1A1A] mb-4"
             style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
           >
-            Transform drawings into photorealistic CGI
+            Your child&apos;s drawing, brought to life
           </h2>
-          <p
-            className="text-center text-[#6B6B6B] text-base mb-4 max-w-lg mx-auto"
-            style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
-          >
-            TinyScribble takes your child&apos;s drawing and transforms it into a
-            photorealistic CGI image — every line, every color, every imperfection
-            preserved with{" "}
-            <strong className="text-[#1A1A1A]">incredible accuracy</strong>.
-          </p>
           <p
             className="text-center text-[#6B6B6B] text-base mb-6 max-w-lg mx-auto"
             style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
           >
-            But it doesn&apos;t stop there. Turn it into a short cinematic video.
-            Watch it come to life.{" "}
-            <strong className="text-[#1A1A1A]">Share it with family</strong>.
+            Upload any drawing. We transform it into a photorealistic scene, then
+            animate it into a short video your child will never forget.
           </p>
           {/* Side-by-side before/after */}
           <div className="rounded-2xl overflow-hidden bg-[#efe9e6] p-3 flex gap-3 mb-6">
@@ -292,7 +282,7 @@ export default async function Home() {
             className="text-[32px] sm:text-[28px] font-bold text-[#1A1A1A] mb-3"
             style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
           >
-            See your child&apos;s drawing come to life — try for free
+            The magic is one upload away
           </h2>
           <p
             className="text-[#6B6B6B] text-base mb-8"
