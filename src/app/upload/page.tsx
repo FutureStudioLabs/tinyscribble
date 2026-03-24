@@ -68,9 +68,9 @@ export default function UploadPage() {
 
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex min-h-0 flex-1 flex-col px-5">
-          {/* Block flow only — avoids flex distributing extra height between copy and CTA */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-md grow-0 flex-col items-center pt-8 text-center">
+          {/* Vertically centered in the viewport below the header; scrolls on short screens */}
+          <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto">
+            <div className="mx-auto flex w-full max-w-md flex-col items-center py-8 text-center">
               <FunnelUploadIconBadge className="mx-auto" />
               <h1
                 className="mb-5 text-[32px] font-bold text-[#1A1A1A]"
@@ -117,6 +117,11 @@ export default function UploadPage() {
                 onExamplePick={handleExamplePick}
                 examplesDisabled={isUploading}
               />
+              <FunnelBottomDock tone="cream" className="w-full">
+                <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                  <FunnelLegalDisclaimer />
+                </div>
+              </FunnelBottomDock>
               {error && (
                 <div className="mb-4 mt-4 flex flex-col items-center space-y-3">
                   <ErrorStateIcon size={44} />
@@ -129,12 +134,6 @@ export default function UploadPage() {
                   <SupportContact errorSummary={error} />
                 </div>
               )}
-
-              <FunnelBottomDock tone="cream" className="w-full">
-                <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-                  <FunnelLegalDisclaimer />
-                </div>
-              </FunnelBottomDock>
             </div>
           </div>
         </main>
