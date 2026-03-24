@@ -105,8 +105,8 @@ export default function LoadingPage() {
 
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex min-h-0 flex-1 flex-col px-5">
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-visible">
-            <div className="mx-auto flex w-full max-w-md grow-0 flex-col items-center pt-6 text-center">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-visible">
+            <div className="mx-auto my-auto flex w-full max-w-md flex-col items-center py-8 text-center">
             {uploadError ? <ErrorStateIcon className="mb-4" size={56} /> : null}
 
             {/* Preview only after upload succeeds — hidden while upload is in progress (3:4 matches typical drawings) */}
