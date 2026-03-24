@@ -1,4 +1,5 @@
 import {
+  getObjectBuffer,
   getObjectBufferRange,
   getObjectWebStream,
   headObject,
@@ -88,11 +89,28 @@ export async function GET(request: NextRequest) {
           "Content-Length": String(chunk.length),
           "Content-Range": `bytes ${start}-${end}/${total}`,
           "Accept-Ranges": "bytes",
-          "Cache-Control": "private, max-age=3600",
+          "Cache-Control": "public, max-age=3600",
         },
       });
     }
 
+    // For images (generated/*, uploads/*), buffer the response.
+    // Vercel serverless functions sometimes stall when piping Node streams to Web streams for binary data.
+    // These images are well under Vercel's 4.5MB payload limit.
+    if (!key.startsWith("videos/")) {
+      const { buffer, contentType } = await getObjectBuffer(key);
+      const resolved = resolveContentType(contentType, key);
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": resolved,
+          "Content-Length": String(buffer.length),
+          "Accept-Ranges": "bytes",
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
+    }
+
+    // For videos without a range header, fall back to streaming
     const { stream, contentLength, contentType } = await getObjectWebStream(key);
     const resolved = resolveContentType(contentType, key);
     return new NextResponse(stream, {
@@ -100,7 +118,7 @@ export async function GET(request: NextRequest) {
         "Content-Type": resolved,
         ...(contentLength > 0 ? { "Content-Length": String(contentLength) } : {}),
         "Accept-Ranges": "bytes",
-        "Cache-Control": "private, max-age=3600",
+        "Cache-Control": "public, max-age=3600",
       },
     });
   } catch (err) {
