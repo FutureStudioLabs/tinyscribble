@@ -40,7 +40,7 @@ export async function GET() {
       const thumb =
         typeof row.thumbnail_r2_key === "string" ? row.thumbnail_r2_key.trim() : "";
       const hasPoster = Boolean(
-        vid && thumb && thumb.startsWith("generated/") && !thumb.includes("..")
+        vid && thumb && (thumb.startsWith("generated/") || thumb.startsWith("uploads/")) && !thumb.includes("..")
       );
       const previewUrl = hasPoster ? `/api/media?key=${encodeURIComponent(thumb)}` : openUrl;
       return {
