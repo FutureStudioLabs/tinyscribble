@@ -45,7 +45,8 @@ async function assertVideoAccess(): Promise<
 }
 
 function isGeneratedKey(key: string): boolean {
-  return key.startsWith("generated/") && !key.includes("..") && key.length < 500;
+  // Allow generated/ or uploads/ (if testing with raw uploads)
+  return (key.startsWith("generated/") || key.startsWith("uploads/")) && !key.includes("..") && key.length < 500;
 }
 
 function safeVideoKey(jobId: string): string {
@@ -110,6 +111,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid jobId" }, { status: 400 });
   }
 
+  /** Same CGI frame used for VEO — stored as gallery thumbnail (reliable vs separate client POST). */
+  const cgiKeyParam = request.nextUrl.searchParams.get("cgiKey")?.trim() ?? "";
+  const posterR2Key = isGeneratedKey(cgiKeyParam) ? cgiKeyParam : null;
+
   try {
     const { status, errorMessage } = await getVeoVideoStatus(jobId);
 
@@ -144,10 +149,18 @@ export async function GET(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     if (user?.id) {
-      const { error: galleryErr } = await supabase.from("gallery_items").insert({
+      const row: {
+        user_id: string;
+        r2_key: string;
+        thumbnail_r2_key?: string;
+      } = {
         user_id: user.id,
         r2_key: r2Key,
-      });
+      };
+      if (posterR2Key) {
+        row.thumbnail_r2_key = posterR2Key;
+      }
+      const { error: galleryErr } = await supabase.from("gallery_items").insert(row);
       if (galleryErr) console.error("gallery_items insert (video)", galleryErr);
     }
 

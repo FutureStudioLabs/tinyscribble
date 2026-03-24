@@ -20,7 +20,7 @@ export async function GET() {
 
   const { data: items, error } = await supabase
     .from("gallery_items")
-    .select("id, r2_key, created_at")
+    .select("id, r2_key, created_at, thumbnail_r2_key")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -29,12 +29,28 @@ export async function GET() {
     return NextResponse.json({ items: [], error: error.message }, { status: 500 });
   }
 
+  function isVideoKey(key: string): boolean {
+    return key.startsWith("videos/") || /\.mp4$/i.test(key);
+  }
+
   return NextResponse.json({
-    items: (items ?? []).map((row) => ({
-      id: row.id,
-      r2Key: row.r2_key,
-      createdAt: row.created_at,
-      previewUrl: `/api/media?key=${encodeURIComponent(row.r2_key)}`,
-    })),
+    items: (items ?? []).map((row) => {
+      const openUrl = `/api/media?key=${encodeURIComponent(row.r2_key)}`;
+      const vid = isVideoKey(row.r2_key);
+      const thumb =
+        typeof row.thumbnail_r2_key === "string" ? row.thumbnail_r2_key.trim() : "";
+      const hasPoster = Boolean(
+        vid && thumb && thumb.startsWith("generated/") && !thumb.includes("..")
+      );
+      const previewUrl = hasPoster ? `/api/media?key=${encodeURIComponent(thumb)}` : openUrl;
+      return {
+        id: row.id,
+        r2Key: row.r2_key,
+        createdAt: row.created_at,
+        previewUrl,
+        openUrl,
+        hasPoster,
+      };
+    }),
   });
 }

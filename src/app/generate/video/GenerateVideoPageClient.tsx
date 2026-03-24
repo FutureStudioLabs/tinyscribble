@@ -231,10 +231,14 @@ export function GenerateVideoPageClient() {
       setProgress((p) => Math.max(p, target));
 
       try {
-        const res = await fetch(
-          `/api/generate-video?jobId=${encodeURIComponent(jobId)}`,
-          { credentials: "include" }
-        );
+        const qs = new URLSearchParams({ jobId });
+        if (cgiKey) {
+          // cgiKey is usually "generated/xxxxx.png", we must pass it so the server can save it
+          qs.set("cgiKey", cgiKey);
+        }
+        const res = await fetch(`/api/generate-video?${qs.toString()}`, {
+          credentials: "include",
+        });
         const data = (await res.json()) as {
           status?: string;
           error?: string;
