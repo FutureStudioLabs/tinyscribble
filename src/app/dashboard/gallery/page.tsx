@@ -12,26 +12,51 @@ type GalleryItem = {
   id: string;
   r2Key: string;
   createdAt: string;
+  /** Grid cell src: poster image for videos when hasPoster, else same as openUrl. */
   previewUrl: string;
+  /** Link target: MP4 for videos, image URL for stills. */
+  openUrl: string;
+  /** CGI still stored in Supabase — grid uses fast <img> instead of <video> decode. */
+  hasPoster?: boolean;
 };
 
 function isVideoKey(key: string): boolean {
   return key.startsWith("videos/") || /\.mp4$/i.test(key);
 }
 
-/** Video grid cell — first frame can be slow over /api/media; show spinner until ready. */
+/**
+ * Fallback when a video has no poster: decode first frame via <video>.
+ * `onLoadedData` often never fires with preload="metadata" (esp. WebKit / production),
+ * so we use loadedmetadata / canplay and a timeout.
+ */
 function GalleryVideoPreview({ previewUrl }: { previewUrl: string }) {
   const [thumbReady, setThumbReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setThumbReady(true), 12_000);
+    return () => clearTimeout(id);
+  }, [previewUrl]);
+
+  // Vercel / Safari sometimes won't load metadata unless forced to play/pause or explicitly load
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+    }
+  }, [previewUrl]);
 
   return (
     <>
       <video
+        ref={videoRef}
         src={previewUrl}
         className="h-full w-full object-cover"
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
+        onLoadedMetadata={() => setThumbReady(true)}
         onLoadedData={() => setThumbReady(true)}
+        onCanPlay={() => setThumbReady(true)}
         onError={() => setThumbReady(true)}
       />
       {!thumbReady ? (
@@ -149,7 +174,14 @@ export default function DashboardGalleryPage() {
       .then((res) => res.json())
       .then((data: { items?: GalleryItem[]; error?: string }) => {
         if (data.error) setFetchError(data.error);
-        setItems(Array.isArray(data.items) ? data.items : []);
+        const raw = Array.isArray(data.items) ? data.items : [];
+        setItems(
+          raw.map((i) => ({
+            ...i,
+            openUrl: i.openUrl ?? i.previewUrl,
+            hasPoster: Boolean(i.hasPoster),
+          }))
+        );
       })
       .catch(() => setFetchError("Couldn’t load your gallery."))
       .finally(() => setLoading(false));
@@ -270,17 +302,26 @@ export default function DashboardGalleryPage() {
               <div className="grid grid-cols-2 gap-3">
                 {visibleItems.map((item) => {
                   const video = isVideoKey(item.r2Key);
+                  const usePoster = video && item.hasPoster;
                   const dateStr = formatGalleryDate(item.createdAt);
                   return (
                     <a
                       key={item.id}
-                      href={item.previewUrl}
+                      href={item.openUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="group relative aspect-square overflow-hidden rounded-2xl bg-[#FDF8F5] shadow-sm ring-1 ring-black/[0.04]"
                     >
                       <div className="relative h-full w-full">
-                        {video ? (
+                        {usePoster ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- CGI poster via /api/media
+                          <img
+                            src={item.previewUrl}
+                            alt=""
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                            loading="lazy"
+                          />
+                        ) : video ? (
                           <GalleryVideoPreview previewUrl={item.previewUrl} />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element -- proxied same-origin URL from R2
