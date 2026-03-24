@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { HeaderUserAvatar } from "@/components/auth/HeaderUserAvatar";
+import { HomeUploadButton } from "@/components/HomeUploadButton";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
 import { Footer } from "@/components/Footer";
 import { JustPictureIt } from "@/components/JustPictureIt";
@@ -64,14 +65,7 @@ export default async function Home() {
 
           {/* Primary CTA + legal — inline with hero content */}
           <div className="w-full space-y-4">
-            <Link
-              href="/upload"
-              className={funnelPrimaryButtonClassName}
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Upload Your Drawing
-              <span className="text-lg">↑</span>
-            </Link>
+            <HomeUploadButton />
             <p
               className="mx-auto max-w-sm text-center text-[13px] text-[#9B9B9B]"
               style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
@@ -129,14 +123,7 @@ export default async function Home() {
           />
 
           <div className="mt-4 flex w-full justify-center">
-            <Link
-              href="/upload"
-              className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Upload Your Drawing
-              <span className="text-lg">↑</span>
-            </Link>
+            <HomeUploadButton className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5" />
           </div>
         </div>
       </section>
@@ -189,14 +176,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="flex w-full justify-center">
-            <Link
-              href="/upload"
-              className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] px-6 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Upload Your Drawing
-              <span className="text-lg">↑</span>
-            </Link>
+            <HomeUploadButton className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] px-6 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5" />
           </div>
         </div>
       </section>
@@ -294,14 +274,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="mt-6 flex w-full justify-center">
-            <Link
-              href="/upload"
-              className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Upload Your Drawing
-              <span className="text-lg">↑</span>
-            </Link>
+            <HomeUploadButton className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-full border-2 border-[#FF7B5C] px-5 text-[#FF7B5C] font-semibold text-sm transition-colors hover:bg-[#FF7B5C]/5" />
           </div>
         </div>
       </section>
@@ -329,14 +302,7 @@ export default async function Home() {
           </p>
           <div className="relative w-full max-w-md mx-auto mb-8">
             <div className="absolute inset-0 bg-[#FF7B5C]/20 rounded-full blur-2xl -z-10" />
-            <Link
-              href="/upload"
-              className={`${funnelPrimaryButtonClassName} shadow-lg`}
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Upload Your Drawing
-              <span className="text-lg">↑</span>
-            </Link>
+            <HomeUploadButton className={`${funnelPrimaryButtonClassName} shadow-lg`} />
           </div>
           <p
             className="text-[13px] text-[#9B9B9B] max-w-sm mx-auto"

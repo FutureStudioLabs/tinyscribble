@@ -14,51 +14,14 @@ import { FunnelUploadIconBadge } from "@/components/funnel/FunnelUploadIconBadge
 import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import type { ExamplePickInfo } from "@/components/funnel/FunnelUploadGreatExamples";
 import { setPendingUpload } from "@/lib/upload-store";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
-/** Android WebView / Chrome often blocks programmatic file opens; skip auto-open there. */
-function isAndroidDevice(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /Android/i.test(navigator.userAgent);
-}
-
-/** iOS Safari shows the system Photo Library / Take Photo / Choose File sheet after a programmatic input click. */
-function isIOSDevice(): boolean {
-  if (typeof navigator === "undefined") return false;
-  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) return true;
-  return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-}
 
 export default function UploadPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const autoOpenLatchRef = useRef(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isAndroidDevice()) return;
-    if (autoOpenLatchRef.current) return;
-    autoOpenLatchRef.current = true;
-
-    const openPicker = () => {
-      inputRef.current?.click();
-    };
-
-    let timeoutId: number | undefined;
-    if (isIOSDevice()) {
-      // Short delay so Safari shows the system sheet after client navigation (same idea as remove.bg).
-      timeoutId = window.setTimeout(openPicker, 100) as number;
-    } else {
-      openPicker();
-    }
-
-    return () => {
-      if (timeoutId != null) window.clearTimeout(timeoutId);
-      autoOpenLatchRef.current = false;
-    };
-  }, []);
 
   const handleClick = () => {
     setError(null);
