@@ -145,6 +145,57 @@ export function DashboardUploadClient() {
     );
   }
 
+  const showNoPlan =
+    entitlement?.authenticated === true && entitlement.entitled === false;
+
+  if (showNoPlan) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex w-full min-w-0 max-w-none flex-col gap-4 py-2">
+            <h2
+              className="text-left text-xl font-bold text-[#1A1A1A] sm:text-2xl"
+              style={{ fontFamily: "var(--font-fredoka)", lineHeight: 1.2 }}
+            >
+              {DASHBOARD_COPY.upload.headline}
+            </h2>
+
+            <div className="rounded-2xl border border-[#FFD4C4] bg-[#FFF5F0] px-5 py-10 text-center">
+              <LockIcon
+                size={56}
+                weight="duotone"
+                className="mx-auto mb-5 text-[#E85A3C]/90"
+                aria-hidden
+              />
+              <h3
+                className="mb-2 text-lg font-bold text-[#1A1A1A]"
+                style={{ fontFamily: "var(--font-fredoka)" }}
+              >
+                {DASHBOARD_COPY.upload.noPlan.headline}
+              </h3>
+              <p
+                className="text-sm leading-relaxed text-[#6B6B6B]"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                {DASHBOARD_COPY.upload.noPlan.body}
+              </p>
+            </div>
+          </div>
+
+          <FunnelBottomDock tone="none">
+            <Link
+              href={DASHBOARD_PAYWALL_UPLOAD_HREF}
+              className={`${funnelPrimaryButtonClassName} block w-full text-center no-underline`}
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {DASHBOARD_COPY.upload.noPlan.cta}
+            </Link>
+          </FunnelBottomDock>
+        </div>
+      </div>
+    );
+  }
+
   if (showTrialExhausted) {
     const trialResetLabel = formatPlanStartDate(entitlement?.trialEndsAt ?? null);
     return (

@@ -54,6 +54,10 @@ export const DASHBOARD_COPY = {
     allCreditsUsedThisMonth: "All credits used this month",
     ctaStartEarly: "Start early →",
     ctaUpgrade: "Upgrade →",
+    /** Logged in but no trial / paid subscription (billing not entitled). */
+    noPlanTitle: "No active plan yet",
+    noPlanBody: "Start a trial or subscribe to unlock uploads, CGI, and video.",
+    ctaChoosePlan: "Choose plan →",
     videosLeft: (n: number) => `${n} video${n === 1 ? "" : "s"} left`,
     scenesLeft: (n: number) => `${n} scene${n === 1 ? "" : "s"} left`,
     /** Preview case 1 */
@@ -94,6 +98,12 @@ export const DASHBOARD_COPY = {
       cardBodyNextBilling: `${PAID_MONTHLY_VIDEO_LIMIT} videos and ${PAID_MONTHLY_SCENE_LIMIT} scenes reset on your next billing date.`,
       ctaDisabledWithDate: (date: string) => `Credits reset on ${date}`,
       ctaDisabledFallback: "Credits reset next billing cycle",
+    },
+    /** Logged in, not entitled — must go through paywall / checkout first. */
+    noPlan: {
+      headline: "Subscribe to start",
+      body: "Pick a plan or start a trial to upload drawings and create CGI and video.",
+      cta: "View plans & pricing",
     },
     noScenes: {
       cardTitle: "No scenes left",

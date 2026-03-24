@@ -1,52 +1,90 @@
+import Image from "next/image";
+
+const EXAMPLES: { src: string; alt: string; filename: string }[] = [
+  {
+    src: "/upload-examples/Stickman_drawing.jpeg",
+    alt: "Example: stick figure drawing",
+    filename: "stickman-drawing.jpeg",
+  },
+  {
+    src: "/upload-examples/Superman_drawing.jpg",
+    alt: "Example: superhero drawing",
+    filename: "superman-drawing.jpg",
+  },
+  {
+    src: "/upload-examples/Unicorn_drawing.jpg",
+    alt: "Example: unicorn drawing",
+    filename: "unicorn-drawing.jpg",
+  },
+];
+
+export type ExamplePickInfo = { src: string; filename: string };
+
+type Props = {
+  className?: string;
+  /** When set, tapping an example starts the funnel with that file (no system picker). */
+  onExamplePick?: (info: ExamplePickInfo) => void | Promise<void>;
+  examplesDisabled?: boolean;
+};
+
 /**
- * Step 1 helper: heading + three example tiles (matches upload guidance mock).
+ * Step 1 helper: “No image?” row + three example tiles (below primary CTA on /upload).
+ * Assets live in `public/upload-examples/` (copied from Desktop).
  */
-export function FunnelUploadGreatExamples({ className = "" }: { className?: string }) {
+export function FunnelUploadGreatExamples({
+  className = "",
+  onExamplePick,
+  examplesDisabled = false,
+}: Props) {
+  const interactive = Boolean(onExamplePick);
+
   return (
-    <div className={`mx-auto w-full ${className}`}>
-      <div className="mx-auto max-w-[10.25rem]">
-        <p
-          className="mb-1.5 text-center text-[12px] font-bold leading-tight text-[#C8C8C8] sm:mb-2 sm:text-[13px] sm:text-[#BABABA]"
-          style={{ fontFamily: "var(--font-fredoka)" }}
+    <div className={`mx-auto mt-6 w-full sm:mt-8 ${className}`}>
+      <p
+        className="mb-3 text-center text-[14px] font-bold leading-snug text-[#334155] sm:mb-4 sm:text-[15px]"
+        style={{ fontFamily: "var(--font-body)" }}
+      >
+        No image? Try one of these:
+      </p>
+      <div className="mx-auto max-w-[13.5rem] sm:max-w-[15rem]">
+        <ul
+          className="grid grid-cols-3 gap-2 sm:gap-3"
+          aria-label="Example drawing styles to try"
         >
-          Here&apos;s what a great upload looks like
-        </p>
-        <ul className="grid grid-cols-3 gap-1 sm:gap-1.5" aria-label="Example upload styles">
-          {[
-            {
-              emoji: "🐢",
-              label: "Example: clear simple subject",
-              tileClass: "bg-[#D8F0E0]",
-            },
-            {
-              emoji: "🚴",
-              label: "Example: photo with good detail",
-              tileClass: "bg-[#FFE4D6]",
-            },
-            {
-              emoji: "🐉",
-              label: "Example: bold drawing",
-              tileClass: "bg-[#D6EEF2]",
-            },
-          ].map((item) => (
-            <li key={item.label}>
-              <div
-                className={`flex aspect-square items-center justify-center rounded-lg text-[1.45rem] leading-none sm:rounded-xl sm:text-[1.65rem] ${item.tileClass}`}
-                role="img"
-                aria-label={item.label}
-              >
-                <span aria-hidden>{item.emoji}</span>
-              </div>
+          {EXAMPLES.map((item) => (
+            <li key={item.src}>
+              {interactive ? (
+                <button
+                  type="button"
+                  disabled={examplesDisabled}
+                  onClick={() => void onExamplePick?.({ src: item.src, filename: item.filename })}
+                  className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl border-0 p-0 shadow-sm ring-1 ring-black/[0.04] transition hover:ring-2 hover:ring-[#FF7B5C]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7B5C] disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label={`Use example: ${item.alt}`}
+                >
+                  <Image
+                    src={item.src}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 28vw, 120px"
+                    aria-hidden
+                  />
+                </button>
+              ) : (
+                <div className="relative aspect-square overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/[0.04]">
+                  <Image
+                    src={item.src}
+                    alt={item.alt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 28vw, 120px"
+                  />
+                </div>
+              )}
             </li>
           ))}
         </ul>
       </div>
-      <p
-        className="mx-auto mt-2.5 max-w-[17.5rem] text-center text-[11px] leading-snug text-[#9B9B9B] sm:mt-3 sm:max-w-xs sm:text-[12px]"
-        style={{ fontFamily: "var(--font-body)" }}
-      >
-        Clear photo · good light · drawing fills the frame
-      </p>
     </div>
   );
 }

@@ -228,6 +228,26 @@ export function DashboardHeroCard({
           className="relative mt-4 h-8 w-48 max-w-full animate-pulse rounded-full bg-white/15"
           aria-hidden
         />
+      ) : ent.authenticated && !ent.entitled ? (
+        <div
+          className="relative mt-4 rounded-2xl border border-white/30 bg-white/10 p-3.5 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.12)] backdrop-blur-sm"
+          style={{ fontFamily: "var(--font-body)" }}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-bold leading-snug text-white">
+                {DASHBOARD_COPY.hero.noPlanTitle}
+              </p>
+              <p className="mt-1 text-sm leading-snug text-white/90">{DASHBOARD_COPY.hero.noPlanBody}</p>
+            </div>
+            <Link
+              href={DASHBOARD_PAYWALL_UPLOAD_HREF}
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[#FF7B5C] shadow-sm no-underline transition hover:bg-white/95"
+            >
+              {DASHBOARD_COPY.hero.ctaChoosePlan}
+            </Link>
+          </div>
+        </div>
       ) : null}
     </div>
   );
