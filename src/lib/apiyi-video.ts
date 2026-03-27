@@ -1,3 +1,4 @@
+import { getFetchErrorMessage } from "@/lib/fetch-error-message";
 import { VEO_VIDEO_PROMPT } from "@/lib/veo-video-prompt";
 
 const DEFAULT_BASE = "https://api.apiyi.com";
@@ -43,6 +44,14 @@ export async function submitVeoVideoJob(
       body: form,
       signal: controller.signal,
     });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error("APIYI video submit timed out after 120 seconds.");
+    }
+    throw new Error(
+      `APIYI unreachable at ${base}/v1/videos (${getFetchErrorMessage(e)}). ` +
+        "Confirm APIYI_API_KEY and APIYI_BASE_URL on the server (e.g. Vercel Production env)."
+    );
   } finally {
     clearTimeout(timeout);
   }
@@ -79,9 +88,16 @@ export async function getVeoVideoStatus(jobId: string): Promise<{
   errorMessage?: string;
 }> {
   const { apiKey, base } = getConfig();
-  const res = await fetch(`${base}/v1/videos/${encodeURIComponent(jobId)}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${base}/v1/videos/${encodeURIComponent(jobId)}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+  } catch (e) {
+    throw new Error(
+      `APIYI video status fetch failed (${getFetchErrorMessage(e)})`
+    );
+  }
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`APIYI video status ${res.status}: ${text.slice(0, 500)}`);
@@ -210,9 +226,16 @@ export type VeoVideoContentResult =
  */
 export async function getVeoVideoContent(jobId: string): Promise<VeoVideoContentResult> {
   const { apiKey, base } = getConfig();
-  const res = await fetch(`${base}/v1/videos/${encodeURIComponent(jobId)}/content`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${base}/v1/videos/${encodeURIComponent(jobId)}/content`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+  } catch (e) {
+    throw new Error(
+      `APIYI video content fetch failed (${getFetchErrorMessage(e)})`
+    );
+  }
 
   const contentType = (res.headers.get("content-type") || "").toLowerCase();
   const arrayBuffer = await res.arrayBuffer();

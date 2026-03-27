@@ -1,3 +1,4 @@
+import { getFetchErrorMessage } from "@/lib/fetch-error-message";
 import { NANO_BANANA_IMAGE_PROMPT } from "@/lib/nano-banana-prompt";
 
 type ChatCompletionResponse = {
@@ -15,7 +16,8 @@ export async function generateNanoBananaImage(
   drawingImageUrl: string
 ): Promise<Buffer> {
   const apiKey = process.env.APIYI_API_KEY;
-  const base = process.env.APIYI_BASE_URL || "https://api.apiyi.com";
+  const baseRaw = process.env.APIYI_BASE_URL || "https://api.apiyi.com";
+  const base = baseRaw.replace(/\/$/, "");
   const model = process.env.APIYI_IMAGE_MODEL?.trim() || APIYI_DEFAULT_IMAGE_MODEL;
   if (!apiKey) {
     throw new Error("Missing APIYI_API_KEY");
@@ -26,7 +28,7 @@ export async function generateNanoBananaImage(
 
   let res: Response;
   try {
-    res = await fetch(`${base.replace(/\/$/, "")}/v1/chat/completions`, {
+    res = await fetch(`${base}/v1/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -50,6 +52,14 @@ export async function generateNanoBananaImage(
       }),
       signal: controller.signal,
     });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error("APIYI image request timed out after 120 seconds.");
+    }
+    throw new Error(
+      `APIYI unreachable at ${base}/v1/chat/completions (${getFetchErrorMessage(e)}). ` +
+        "Confirm APIYI_API_KEY and APIYI_BASE_URL on the server (e.g. Vercel Production env)."
+    );
   } finally {
     clearTimeout(timeout);
   }
