@@ -14,6 +14,14 @@ export function formatErrorForUser(message: string): string {
     return "We couldn’t authorize this request. Please try again, or contact support if it keeps happening.";
   }
 
+  if (
+    /<html[\s>]/i.test(m) ||
+    /openresty/i.test(m) ||
+    /<title>\s*500\b/i.test(m)
+  ) {
+    return "The image service had a temporary gateway error. Please try again in a moment. If it keeps failing, contact support.";
+  }
+
   if (/\b403\b/.test(m) && /APIYI|apiyi/i.test(m)) {
     return "The image service refused this request (often a quota or permissions issue). Please try again later or contact support.";
   }

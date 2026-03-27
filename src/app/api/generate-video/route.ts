@@ -1,4 +1,8 @@
 import {
+  isAllowedApiyiBase,
+  normalizeApiyiBase,
+} from "@/lib/apiyi-bases";
+import {
   getVeoVideoContent,
   getVeoVideoStatus,
   submitVeoVideoJob,
@@ -109,8 +113,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const { buffer, contentType } = await getObjectBuffer(cgiKey);
-    const jobId = await submitVeoVideoJob(buffer, contentType);
-    return NextResponse.json({ jobId });
+    const { jobId, base: apiyiBase } = await submitVeoVideoJob(buffer, contentType);
+    return NextResponse.json({ jobId, apiyiBase });
   } catch (e) {
     console.error("generate-video POST", e);
     const msg = e instanceof Error ? e.message : "Video start failed";
@@ -132,12 +136,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid jobId" }, { status: 400 });
   }
 
+  /** Must match the host that created `jobId` (e.g. https://vip.apiyi.com after primary 5xx). */
+  const rawApiyiBase = request.nextUrl.searchParams.get("apiyiBase")?.trim();
+  let apiyiBase: string | null = null;
+  if (rawApiyiBase) {
+    const n = normalizeApiyiBase(rawApiyiBase);
+    if (!isAllowedApiyiBase(n)) {
+      return NextResponse.json({ error: "Invalid apiyiBase" }, { status: 400 });
+    }
+    apiyiBase = n;
+  }
+
   /** Same CGI frame used for VEO — stored as gallery thumbnail (reliable vs separate client POST). */
   const cgiKeyParam = request.nextUrl.searchParams.get("cgiKey")?.trim() ?? "";
   const posterR2Key = isGeneratedKey(cgiKeyParam) ? cgiKeyParam : null;
 
   try {
-    const { status, errorMessage } = await getVeoVideoStatus(jobId);
+    const { status, errorMessage } = await getVeoVideoStatus(jobId, apiyiBase);
 
     if (status === "failed") {
       return NextResponse.json({
@@ -164,7 +179,7 @@ export async function GET(request: NextRequest) {
     }
 
     // completed — /content may be JSON { url } or raw MP4 / base64 (see apiyi-video)
-    const content = await getVeoVideoContent(jobId);
+    const content = await getVeoVideoContent(jobId, apiyiBase);
     let buffer: Buffer;
     if (content.kind === "buffer") {
       buffer = content.buffer;

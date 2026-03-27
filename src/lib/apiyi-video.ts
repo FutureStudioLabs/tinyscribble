@@ -1,12 +1,26 @@
+import {
+  getApiyiBaseUrls,
+  isAllowedApiyiBase,
+  normalizeApiyiBase,
+  shouldRetryApiyiFailure,
+} from "@/lib/apiyi-bases";
 import { getFetchErrorMessage } from "@/lib/fetch-error-message";
 import { VEO_VIDEO_PROMPT } from "@/lib/veo-video-prompt";
 
-const DEFAULT_BASE = "https://api.apiyi.com";
 const DEFAULT_MODEL = "veo-3.1-fast-fl";
 
-function getConfig() {
+function resolveVideoBase(apiyiBaseOverride?: string | null): string {
+  const bases = getApiyiBaseUrls();
+  if (apiyiBaseOverride != null && apiyiBaseOverride !== "") {
+    const n = normalizeApiyiBase(apiyiBaseOverride);
+    if (isAllowedApiyiBase(n)) return n;
+  }
+  return bases[0]!;
+}
+
+function getVideoApiConfig(apiyiBaseOverride?: string | null) {
   const apiKey = process.env.APIYI_API_KEY?.trim();
-  const base = (process.env.APIYI_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
+  const base = resolveVideoBase(apiyiBaseOverride);
   const model = process.env.APIYI_VIDEO_MODEL || DEFAULT_MODEL;
   if (!apiKey) throw new Error("Missing APIYI_API_KEY");
   return { apiKey, base, model };
@@ -15,13 +29,16 @@ function getConfig() {
 type VideoCreateResponse = { id?: string; status?: string };
 
 /**
- * Step 1: Submit CGI frame as multipart; returns APIYI video job id.
+ * Step 1: Submit CGI frame as multipart. Returns job id and the APIYI base that accepted it
+ * (poll status/content on the same host). Tries fallback VIP host on 5xx/HTML errors.
  */
 export async function submitVeoVideoJob(
   imageBuffer: Buffer,
   imageContentType: string
-): Promise<string> {
-  const { apiKey, base, model } = getConfig();
+): Promise<{ jobId: string; base: string }> {
+  const apiKey = process.env.APIYI_API_KEY?.trim();
+  const model = process.env.APIYI_VIDEO_MODEL || DEFAULT_MODEL;
+  if (!apiKey) throw new Error("Missing APIYI_API_KEY");
 
   const ext =
     imageContentType.includes("png") ? "png" : imageContentType.includes("webp") ? "webp" : "jpg";
@@ -29,50 +46,66 @@ export async function submitVeoVideoJob(
     type: imageContentType || "image/png",
   });
 
-  const form = new FormData();
-  form.append("prompt", VEO_VIDEO_PROMPT);
-  form.append("model", model);
-  form.append("input_reference", blob, `frame.${ext}`);
+  const bases = getApiyiBaseUrls();
+  let lastErr: Error | null = null;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000);
-  let res: Response;
-  try {
-    res = await fetch(`${base}/v1/videos`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
-      signal: controller.signal,
-    });
-  } catch (e) {
-    if (e instanceof Error && e.name === "AbortError") {
-      throw new Error("APIYI video submit timed out after 120 seconds.");
+  for (let bi = 0; bi < bases.length; bi++) {
+    const base = bases[bi]!;
+    const form = new FormData();
+    form.append("prompt", VEO_VIDEO_PROMPT);
+    form.append("model", model);
+    form.append("input_reference", blob, `frame.${ext}`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+    let res: Response;
+    try {
+      res = await fetch(`${base}/v1/videos`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      if (e instanceof Error && e.name === "AbortError") {
+        throw new Error("APIYI video submit timed out after 120 seconds.");
+      }
+      lastErr = new Error(
+        `APIYI unreachable at ${base}/v1/videos (${getFetchErrorMessage(e)}). ` +
+          "Confirm APIYI_API_KEY on the server."
+      );
+      if (bi < bases.length - 1) continue;
+      throw lastErr;
     }
-    throw new Error(
-      `APIYI unreachable at ${base}/v1/videos (${getFetchErrorMessage(e)}). ` +
-        "Confirm APIYI_API_KEY and APIYI_BASE_URL on the server (e.g. Vercel Production env)."
-    );
-  } finally {
     clearTimeout(timeout);
+
+    const text = await res.text();
+    if (!res.ok) {
+      const tryNext =
+        bi < bases.length - 1 && shouldRetryApiyiFailure(res.status, text);
+      lastErr = new Error(`APIYI video submit ${res.status} at ${base}: ${text.slice(0, 800)}`);
+      if (tryNext) continue;
+      throw lastErr;
+    }
+
+    let data: VideoCreateResponse;
+    try {
+      data = JSON.parse(text) as VideoCreateResponse;
+    } catch {
+      lastErr = new Error(`Invalid JSON from APIYI video submit at ${base}`);
+      if (bi < bases.length - 1 && shouldRetryApiyiFailure(500, text)) continue;
+      throw lastErr;
+    }
+
+    const id = data.id;
+    if (!id || typeof id !== "string") {
+      throw new Error("APIYI video submit: missing job id");
+    }
+    return { jobId: id, base };
   }
 
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`APIYI video submit ${res.status}: ${text.slice(0, 800)}`);
-  }
-
-  let data: VideoCreateResponse;
-  try {
-    data = JSON.parse(text) as VideoCreateResponse;
-  } catch {
-    throw new Error("Invalid JSON from APIYI video submit");
-  }
-
-  const id = data.id;
-  if (!id || typeof id !== "string") {
-    throw new Error("APIYI video submit: missing job id");
-  }
-  return id;
+  throw lastErr ?? new Error("APIYI: all base URLs failed for video submit");
 }
 
 type VideoStatusResponse = {
@@ -81,13 +114,16 @@ type VideoStatusResponse = {
 };
 
 /**
- * Step 2: Poll job status.
+ * Step 2: Poll job status. Pass the same `apiyiBase` returned from {@link submitVeoVideoJob}.
  */
-export async function getVeoVideoStatus(jobId: string): Promise<{
+export async function getVeoVideoStatus(
+  jobId: string,
+  apiyiBase?: string | null
+): Promise<{
   status: "queued" | "processing" | "completed" | "failed";
   errorMessage?: string;
 }> {
-  const { apiKey, base } = getConfig();
+  const { apiKey, base } = getVideoApiConfig(apiyiBase);
   let res: Response;
   try {
     res = await fetch(`${base}/v1/videos/${encodeURIComponent(jobId)}`, {
@@ -224,8 +260,11 @@ export type VeoVideoContentResult =
  * Step 3: Parse GET /v1/videos/:id/content.
  * APIYI may return JSON `{ url }`, nested URLs, base64 video, or raw MP4 bytes.
  */
-export async function getVeoVideoContent(jobId: string): Promise<VeoVideoContentResult> {
-  const { apiKey, base } = getConfig();
+export async function getVeoVideoContent(
+  jobId: string,
+  apiyiBase?: string | null
+): Promise<VeoVideoContentResult> {
+  const { apiKey, base } = getVideoApiConfig(apiyiBase);
   let res: Response;
   try {
     res = await fetch(`${base}/v1/videos/${encodeURIComponent(jobId)}/content`, {
@@ -282,8 +321,11 @@ export async function getVeoVideoContent(jobId: string): Promise<VeoVideoContent
 /**
  * @deprecated Prefer {@link getVeoVideoContent} (handles binary + alternate JSON).
  */
-export async function getVeoVideoContentUrl(jobId: string): Promise<string> {
-  const r = await getVeoVideoContent(jobId);
+export async function getVeoVideoContentUrl(
+  jobId: string,
+  apiyiBase?: string | null
+): Promise<string> {
+  const r = await getVeoVideoContent(jobId, apiyiBase);
   if (r.kind === "url") return r.url;
   throw new Error("APIYI video content: response was binary; use getVeoVideoContent + upload");
 }

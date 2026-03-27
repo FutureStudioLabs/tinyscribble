@@ -57,6 +57,8 @@ export function GenerateVideoPageClient() {
   const [videoError, setVideoError] = useState<string | null>(null);
   const [skipTrialOpen, setSkipTrialOpen] = useState(false);
   const jobIdRef = useRef<string | null>(null);
+  /** Same host that created the job (primary vs VIP APIYI gateway). */
+  const apiyiBaseRef = useRef<string | null>(null);
   const pollAbortRef = useRef(false);
   const postInFlightRef = useRef(false);
 
@@ -155,6 +157,7 @@ export function GenerateVideoPageClient() {
     setProgress(5);
     setVideoPhase("starting");
     jobIdRef.current = null;
+    apiyiBaseRef.current = null;
     pollAbortRef.current = false;
 
     try {
@@ -164,7 +167,12 @@ export function GenerateVideoPageClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cgiKey: cgi }),
       });
-      const data = (await res.json()) as { jobId?: string; error?: string; code?: string };
+      const data = (await res.json()) as {
+        jobId?: string;
+        apiyiBase?: string;
+        error?: string;
+        code?: string;
+      };
       if (!res.ok) {
         if (data.code === TRIAL_VIDEO_EXHAUSTED_CODE) {
           setSkipTrialOpen(true);
@@ -187,6 +195,10 @@ export function GenerateVideoPageClient() {
         throw new Error("No job id returned");
       }
       jobIdRef.current = data.jobId;
+      apiyiBaseRef.current =
+        typeof data.apiyiBase === "string" && data.apiyiBase.length > 0
+          ? data.apiyiBase
+          : null;
       setVideoPhase("polling");
       setProgress(12);
     } catch (e) {
@@ -248,6 +260,8 @@ export function GenerateVideoPageClient() {
           // cgiKey is usually "generated/xxxxx.png", we must pass it so the server can save it
           qs.set("cgiKey", cgiKey);
         }
+        const pollBase = apiyiBaseRef.current;
+        if (pollBase) qs.set("apiyiBase", pollBase);
         const res = await fetch(`/api/generate-video?${qs.toString()}`, {
           credentials: "include",
         });
