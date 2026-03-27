@@ -9,9 +9,11 @@ import {
   FunnelPrimaryButton,
   funnelPrimaryButtonClassName,
 } from "@/components/ui/FunnelPrimaryButton";
+import { PAID_VIDEO_LIMIT_CODE } from "@/constants/plan";
 import { TRIAL_VIDEO_EXHAUSTED_CODE, TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { getGeneratedVariantKeys } from "@/lib/generated-variants-cache";
+import { rememberGalleryKey } from "@/lib/pending-gallery-keys";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
 import { ArrowUpRight, DownloadSimple } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -170,6 +172,15 @@ export function GenerateVideoPageClient() {
           setProgress(0);
           return;
         }
+        if (data.code === PAID_VIDEO_LIMIT_CODE) {
+          setVideoError(
+            data.error ||
+              "You've used all your video credits for this billing period. They reset on your next renewal."
+          );
+          setVideoPhase("error");
+          setProgress(0);
+          return;
+        }
         throw new Error(data.error || "Could not start video");
       }
       if (!data.jobId) {
@@ -195,8 +206,9 @@ export function GenerateVideoPageClient() {
     try {
       const raw = sessionStorage.getItem(videoCacheKey(cgiKey));
       if (raw) {
-        const parsed = JSON.parse(raw) as { mediaUrl?: string };
+        const parsed = JSON.parse(raw) as { mediaUrl?: string; r2Key?: string };
         if (parsed.mediaUrl && typeof parsed.mediaUrl === "string") {
+          if (typeof parsed.r2Key === "string") rememberGalleryKey(parsed.r2Key);
           setVideoMediaUrl(parsed.mediaUrl);
           setVideoPhase("complete");
           setProgress(100);
@@ -242,12 +254,18 @@ export function GenerateVideoPageClient() {
         const data = (await res.json()) as {
           status?: string;
           error?: string;
+          code?: string;
           mediaUrl?: string;
           r2Key?: string;
         };
 
         if (data.status === "failed") {
-          setVideoError(data.error || "Video generation failed");
+          setVideoError(
+            data.error ||
+              (data.code === PAID_VIDEO_LIMIT_CODE
+                ? "You've used all your video credits for this billing period."
+                : "Video generation failed")
+          );
           setVideoPhase("error");
           setProgress(0);
           return;
@@ -269,6 +287,7 @@ export function GenerateVideoPageClient() {
           } catch {
             /* ignore */
           }
+          if (typeof data.r2Key === "string") rememberGalleryKey(data.r2Key);
           setVideoMediaUrl(data.mediaUrl);
           setVideoPhase("complete");
           setProgress(100);
@@ -592,6 +611,7 @@ export function GenerateVideoPageClient() {
                 <div className="mx-auto mb-6 aspect-[9/16] w-full max-w-[min(100%,calc(85dvh*9/16))] overflow-hidden rounded-2xl border border-white/80 bg-black">
                   <video
                     src={videoMediaUrl ?? undefined}
+                    poster={cgiKey ? cgiMediaUrl(cgiKey) : undefined}
                     controls
                     playsInline
                     preload="metadata"

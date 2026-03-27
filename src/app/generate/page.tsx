@@ -17,6 +17,7 @@ import {
   getGeneratedVariantKeys,
   saveGeneratedVariantKeys,
 } from "@/lib/generated-variants-cache";
+import { rememberGalleryKeys } from "@/lib/pending-gallery-keys";
 import { streamGenerateImages } from "@/lib/stream-generate-images";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
 import { useRouter } from "next/navigation";
@@ -104,6 +105,7 @@ export default function GeneratePage() {
       setActiveVariant(append ? merged.length - 1 : 0);
       setStatus("ready");
       saveGeneratedVariantKeys(pending.r2Key, merged, mode);
+      rememberGalleryKeys([pending.r2Key, ...merged]);
     } catch (e) {
       if (e instanceof BillingApiError && e.code === TRIAL_IMAGE_LIMIT_CODE) {
         setTrialImageLimitHit(true);
@@ -134,6 +136,7 @@ export default function GeneratePage() {
       setVariantKeys(cached.keys);
       setSceneBatchMode(cached.sceneBatchMode);
       setStatus("ready");
+      rememberGalleryKeys([upload.r2Key, ...cached.keys]);
     }
   }, [upload?.r2Key]);
 

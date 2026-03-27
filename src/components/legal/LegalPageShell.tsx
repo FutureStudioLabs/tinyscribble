@@ -6,10 +6,13 @@ import type { ReactNode } from "react";
 export function LegalPageShell({
   title,
   updated,
+  updatedLabel = "Last updated",
   children,
 }: {
   title: string;
   updated: string;
+  /** e.g. "Effective date" for Terms; defaults to "Last updated". */
+  updatedLabel?: string;
   children: ReactNode;
 }) {
   return (
@@ -41,7 +44,7 @@ export function LegalPageShell({
           className="mb-10 text-sm text-[#9B9B9B]"
           style={{ fontFamily: "var(--font-body)" }}
         >
-          Last updated: {updated}
+          {updatedLabel}: {updated}
         </p>
         <article
           className="space-y-8 text-[15px] leading-relaxed text-[#1A1A1A]"

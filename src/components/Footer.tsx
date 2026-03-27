@@ -38,10 +38,22 @@ export function Footer() {
         </div>
         {/* Navigation links */}
         <nav className="flex flex-col items-center gap-3">
-          <Link href="/terms" className="text-white/90 hover:text-white text-sm transition-colors" style={{ fontFamily: "var(--font-body)" }}>
-            Terms of Service
+          <Link
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/90 hover:text-white text-sm transition-colors"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            Terms of Use
           </Link>
-          <Link href="/privacy" className="text-white/90 hover:text-white text-sm transition-colors" style={{ fontFamily: "var(--font-body)" }}>
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/90 hover:text-white text-sm transition-colors"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
             Privacy Policy
           </Link>
           <Link href="/cookies" className="text-white/90 hover:text-white text-sm transition-colors" style={{ fontFamily: "var(--font-body)" }}>

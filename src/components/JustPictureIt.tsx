@@ -1,19 +1,67 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
+import {
+  JUST_PICTURE_IT_INDICES_BY_TAB,
+  JUST_PICTURE_IT_TABS,
+  JUST_PICTURE_IT_VIDEO_PATHS,
+  type JustPictureItTab,
+} from "@/data/justPictureItVideos";
+import { useEffect, useRef, useState } from "react";
 
-const TABS = ["People", "Products", "Animals"] as const;
+function JustPictureItVideoCard({ src, index }: { src: string; index: number }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-const EXAMPLES = [
-  { src: "/drawing-before.png", label: "Drawing" },
-  { src: "/drawing-after.png", label: "CGI" },
-  { src: "/drawing-before.png", label: "Drawing" },
-  { src: "/drawing-after.png", label: "CGI" },
-];
+  useEffect(() => {
+    const container = wrapRef.current;
+    const video = videoRef.current;
+    if (!container || !video) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void video.play().catch(() => {
+            /* autoplay policy — ignore */
+          });
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.55, rootMargin: "0px" }
+    );
+    io.observe(container);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="w-[320px] flex-shrink-0 snap-center flex flex-col gap-3"
+    >
+      <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#1a1a1a]/[0.06]">
+        <video
+          ref={videoRef}
+          src={src}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-cover"
+          aria-label={`TinyScribble example animation ${index + 1}`}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function JustPictureIt() {
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("People");
+  const [activeTab, setActiveTab] = useState<JustPictureItTab>("People");
+
+  const indices = JUST_PICTURE_IT_INDICES_BY_TAB[activeTab];
+  const videos = indices.map((i) => ({
+    src: JUST_PICTURE_IT_VIDEO_PATHS[i]!,
+    index: i,
+  }));
 
   return (
     <section className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center px-5 py-12 bg-white">
@@ -25,9 +73,8 @@ export function JustPictureIt() {
           Just picture it
         </h2>
 
-        {/* Tabs — match See What's Possible */}
         <div className="flex flex-wrap justify-center gap-2 mb-6">
-          {TABS.map((tab) => (
+          {JUST_PICTURE_IT_TABS.map((tab) => (
             <button
               key={tab}
               type="button"
@@ -44,30 +91,10 @@ export function JustPictureIt() {
           ))}
         </div>
 
-        {/* Horizontal scroll carousel — one image per card */}
         <div className="overflow-x-auto pb-4 -mx-5 px-5 snap-x snap-mandatory">
-          <div className="flex gap-4 min-w-max">
-            {EXAMPLES.map(({ src, label }, i) => (
-              <div
-                key={i}
-                className="w-[320px] flex-shrink-0 snap-center flex flex-col gap-4"
-              >
-                <div className="rounded-xl overflow-hidden bg-[#f5f5f5] aspect-[3/4] w-full">
-                  <Image
-                    src={src}
-                    alt={label}
-                    width={288}
-                    height={384}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span
-                  className="text-center text-[#6B6B6B] text-sm flex-shrink-0"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  {label}
-                </span>
-              </div>
+          <div className="flex min-w-max gap-4">
+            {videos.map(({ src, index }) => (
+              <JustPictureItVideoCard key={src} src={src} index={index} />
             ))}
           </div>
         </div>

@@ -198,9 +198,9 @@ export default function DashboardGalleryPage() {
     else if (videoItems.length === 0 && imageItems.length > 0) setMediaTab("scene");
   }, [loading, items.length, imageItems.length, videoItems.length]);
 
-  /** Upload a drawing/scene first; videos are created from the Generate flow, not uploaded here. */
-  const newSceneHref = "/dashboard/upload";
-  const newSceneLabel = "New scene";
+  /** Funnel upload (`/upload`), then system file sheet after paint (`?pick=1`). */
+  const newVideoHref = "/upload?pick=1";
+  const newVideoLabel = "New video";
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
@@ -248,26 +248,19 @@ export default function DashboardGalleryPage() {
                   Your work will show up here.
                   <br />
                   Start with{" "}
-                  <strong className="font-semibold text-[#1A1A1A]">New scene</strong>.
+                  <strong className="font-semibold text-[#1A1A1A]">New video</strong>.
                 </p>
                 <div className="flex shrink-0 justify-center">
                   <Link
-                    href={newSceneHref}
+                    href={newVideoHref}
                     className="flex h-44 w-44 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                   >
                     <PlusIcon size={32} weight="bold" />
                     <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                      {newSceneLabel}
+                      {newVideoLabel}
                     </span>
                   </Link>
                 </div>
-                <Link
-                  href="/dashboard/billing"
-                  className="text-sm font-semibold text-[#FF7B5C] underline underline-offset-2 hover:text-[#FF6B4A]"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  Billing &amp; plans
-                </Link>
               </div>
             )}
 
@@ -283,21 +276,21 @@ export default function DashboardGalleryPage() {
                 </p>
                 <div className="flex shrink-0 justify-center">
                   <Link
-                    href={newSceneHref}
+                    href={newVideoHref}
                     className="flex h-44 w-44 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                   >
                     <PlusIcon size={32} weight="bold" />
                     <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                      {newSceneLabel}
+                      {newVideoLabel}
                     </span>
                   </Link>
                 </div>
               </div>
             )}
 
-            {/* Only render the grid (+ trailing "New scene" tile) when this tab has items.
+            {/* Only render the grid (+ trailing "New video" tile) when this tab has items.
                 If the other tab has items but this one is empty, the block above already shows
-                a single empty-state "New scene" — avoid duplicating the tile. */}
+                a single empty-state "New video" — avoid duplicating the tile. */}
             {!loading && !fetchError && items.length > 0 && visibleItems.length > 0 && (
               <div className="grid grid-cols-2 gap-3">
                 {visibleItems.map((item) => {
@@ -354,12 +347,12 @@ export default function DashboardGalleryPage() {
                 })}
 
                 <Link
-                  href={newSceneHref}
+                  href={newVideoHref}
                   className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F28B66] bg-[#FDF8F5] text-[#F28B66] transition hover:bg-[#FAF4EF]"
                 >
                   <PlusIcon size={32} weight="bold" />
                   <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-                    {newSceneLabel}
+                    {newVideoLabel}
                   </span>
                 </Link>
               </div>

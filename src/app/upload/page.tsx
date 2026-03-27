@@ -13,15 +13,34 @@ import { FunnelUploadIconBadge } from "@/components/funnel/FunnelUploadIconBadge
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
 import type { ExamplePickInfo } from "@/components/funnel/FunnelUploadGreatExamples";
 import { setPendingUpload } from "@/lib/upload-store";
-import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 const FILE_ACCEPT = "image/jpeg,image/png,image/heic,image/webp";
 
-export default function UploadPage() {
+function UploadPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("pick") !== "1") return;
+    let cancelled = false;
+    const openPicker = () => {
+      if (cancelled) return;
+      fileInputRef.current?.click();
+      router.replace("/upload", { scroll: false });
+    };
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(openPicker);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
+  }, [searchParams, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,6 +110,7 @@ export default function UploadPage() {
                 aria-disabled={isUploading}
               >
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept={FILE_ACCEPT}
                   disabled={isUploading}
@@ -128,5 +148,19 @@ export default function UploadPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#FFF8F5]">
+          <div className="animate-pulse text-[#6B6B6B]">Loading…</div>
+        </div>
+      }
+    >
+      <UploadPageInner />
+    </Suspense>
   );
 }

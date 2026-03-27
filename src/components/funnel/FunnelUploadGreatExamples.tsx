@@ -44,7 +44,7 @@ export function FunnelUploadGreatExamples({
         className="mb-3 text-center text-[14px] font-bold leading-snug text-[#334155] sm:mb-4 sm:text-[15px]"
         style={{ fontFamily: "var(--font-body)" }}
       >
-        No image? Try one of these:
+        Here's what works great:
       </p>
       <div className="mx-auto max-w-[13.5rem] sm:max-w-[15rem]">
         <ul

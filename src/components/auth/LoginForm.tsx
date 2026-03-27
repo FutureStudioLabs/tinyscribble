@@ -587,6 +587,8 @@ export function LoginForm() {
             No password — we&apos;ll email you a secure code. By continuing you agree to our{" "}
             <Link
               href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-[#6B6B6B] underline decoration-[#C8C8C8] underline-offset-2 hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
             >
               Terms
@@ -594,6 +596,8 @@ export function LoginForm() {
             and{" "}
             <Link
               href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-[#6B6B6B] underline decoration-[#C8C8C8] underline-offset-2 hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
             >
               Privacy
@@ -608,6 +612,8 @@ export function LoginForm() {
             By continuing you agree to our{" "}
             <Link
               href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-[#6B6B6B] underline decoration-[#C8C8C8] underline-offset-2 hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
             >
               Terms
@@ -615,6 +621,8 @@ export function LoginForm() {
             and{" "}
             <Link
               href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-[#6B6B6B] underline decoration-[#C8C8C8] underline-offset-2 hover:text-[#1A1A1A] hover:decoration-[#1A1A1A]"
             >
               Privacy

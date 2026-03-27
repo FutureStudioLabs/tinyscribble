@@ -12,7 +12,8 @@ export type StreamGenerateImagesResult = {
 
 /**
  * Calls POST /api/generate-images (NDJSON stream) and reports real server progress.
- * Paid subscribers get one scene per run (`single`); trial and others get three (`triple`).
+ * Subscribed users (`trialing` / `active` / `past_due`) get one scene per run (`single`);
+ * everyone else (e.g. funnel before subscribe) gets three (`triple`).
  */
 export async function streamGenerateImages(
   r2Key: string,

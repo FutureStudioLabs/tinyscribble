@@ -1,10 +1,13 @@
-import { PAID_MONTHLY_SCENE_LIMIT } from "@/constants/plan";
+import { PAID_MONTHLY_SCENE_LIMIT, PAID_MONTHLY_VIDEO_LIMIT } from "@/constants/plan";
 import type { BillingCustomerStripeRow } from "@/lib/billing-customer-read";
 import { fetchBillingCustomerStripeRowForUser } from "@/lib/billing-customer-read";
 import { getStripe } from "@/lib/stripe-server";
+import { paidGalleryUsageSinceMs } from "@/lib/paid-usage-since";
 import {
   countGalleryGeneratedForUser,
   countGalleryGeneratedForUserSince,
+  countGalleryVideosForUser,
+  countGalleryVideosForUserSince,
 } from "@/lib/trial-gallery-counts";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type Stripe from "stripe";
@@ -12,6 +15,7 @@ import type Stripe from "stripe";
 type StripeSubscriptionFields = {
   current_period_start?: number;
   start_date?: number;
+  trial_end?: number | null;
 };
 
 /**
@@ -66,28 +70,28 @@ export async function getPaidSceneRemainingForUser(
 
   const { row: stripeRow } = await fetchBillingCustomerStripeRowForUser(supabase, user);
   if (!stripeRow?.stripe_subscription_id && !stripeRow?.stripe_customer_id) {
+    if (stripeRow) {
+      const sinceMs = paidGalleryUsageSinceMs(stripeRow, null);
+      if (sinceMs != null) {
+        const scenesUsed = await countGalleryGeneratedForUserSince(
+          supabase,
+          user.id,
+          sinceMs
+        );
+        return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+      }
+    }
     const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
     return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
   }
 
   try {
     const stripe = getStripe();
-    const sub = stripeRow ? await loadStripeSubscriptionForBillingRow(stripe, stripeRow) : null;
-    if (sub) {
-      const periodStartSec =
-        typeof sub.current_period_start === "number" && sub.current_period_start > 0
-          ? sub.current_period_start
-          : typeof sub.start_date === "number" && sub.start_date > 0
-            ? sub.start_date
-            : null;
-      if (periodStartSec != null) {
-        const scenesUsed = await countGalleryGeneratedForUserSince(
-          supabase,
-          user.id,
-          periodStartSec * 1000
-        );
-        return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
-      }
+    const sub = await loadStripeSubscriptionForBillingRow(stripe, stripeRow);
+    const sinceMs = paidGalleryUsageSinceMs(stripeRow, sub);
+    if (sinceMs != null) {
+      const scenesUsed = await countGalleryGeneratedForUserSince(supabase, user.id, sinceMs);
+      return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
     }
   } catch (e) {
     console.error("paid-scene-quota: stripe period", e);
@@ -95,4 +99,44 @@ export async function getPaidSceneRemainingForUser(
 
   const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
   return Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+}
+
+/**
+ * Remaining video credits in the current billing period for paid plans.
+ * Returns `null` when the user is not on `active` / `past_due`.
+ */
+export async function getPaidVideoRemainingForUser(
+  supabase: SupabaseClient,
+  user: Pick<User, "id" | "email">,
+  billingStatus: string | null
+): Promise<number | null> {
+  if (!isPaidPlanStatus(billingStatus)) return null;
+
+  const { row: stripeRow } = await fetchBillingCustomerStripeRowForUser(supabase, user);
+  if (!stripeRow?.stripe_subscription_id && !stripeRow?.stripe_customer_id) {
+    if (stripeRow) {
+      const sinceMs = paidGalleryUsageSinceMs(stripeRow, null);
+      if (sinceMs != null) {
+        const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
+        return Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+      }
+    }
+    const videosUsed = await countGalleryVideosForUser(supabase, user.id);
+    return Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+  }
+
+  try {
+    const stripe = getStripe();
+    const sub = await loadStripeSubscriptionForBillingRow(stripe, stripeRow);
+    const sinceMs = paidGalleryUsageSinceMs(stripeRow, sub);
+    if (sinceMs != null) {
+      const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
+      return Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+    }
+  } catch (e) {
+    console.error("paid-video-quota: stripe period", e);
+  }
+
+  const videosUsed = await countGalleryVideosForUser(supabase, user.id);
+  return Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
 }

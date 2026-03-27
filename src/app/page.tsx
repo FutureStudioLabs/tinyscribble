@@ -8,7 +8,14 @@ import { Footer } from "@/components/Footer";
 import { JustPictureIt } from "@/components/JustPictureIt";
 import { Logo } from "@/components/Logo";
 import { createClient } from "@/lib/supabase/server";
+import {
+  pickRandomBeforeAfterPair,
+  pickRandomBeforeAfterPairExcluding,
+} from "@/data/beforeAfterPairs";
 import { redirect } from "next/navigation";
+
+/** New random before/after pair on each visit to the marketing home. */
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -18,6 +25,9 @@ export default async function Home() {
   if (user) {
     redirect("/dashboard");
   }
+
+  const seePossiblePair = pickRandomBeforeAfterPair();
+  const broughtToLifePair = pickRandomBeforeAfterPairExcluding(seePossiblePair);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFF8F5]">
@@ -33,7 +43,7 @@ export default async function Home() {
           {/* Hero video — autoplay looping, silent */}
           <div className="mb-4 flex aspect-[3/4] max-h-[min(300px,calc(40vh-32px))] w-full max-w-md flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black">
             <video
-              src="/main.mp4"
+              src="/hero_video.mp4"
               autoPlay
               loop
               muted
@@ -71,11 +81,21 @@ export default async function Home() {
               style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
             >
               By uploading a drawing you agree to our{" "}
-              <Link href="/terms" className="underline hover:text-[#6B6B6B]">
-                Terms of Service
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-[#6B6B6B]"
+              >
+                Terms of Use
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-[#6B6B6B]"
+              >
                 Privacy Policy
               </Link>
               .
@@ -116,10 +136,10 @@ export default async function Home() {
 
           {/* Before/After slider with star handle */}
           <BeforeAfterSlider
-            beforeSrc="/drawing-before.png"
-            afterSrc="/drawing-after.png"
-            beforeAlt="Child's bunny drawing"
-            afterAlt="AI-generated CGI bunny in a sunny landscape"
+            beforeSrc={seePossiblePair.beforeSrc}
+            afterSrc={seePossiblePair.afterSrc}
+            beforeAlt={seePossiblePair.beforeAlt}
+            afterAlt={seePossiblePair.afterAlt}
           />
 
           <div className="mt-4 flex w-full justify-center">
@@ -144,24 +164,24 @@ export default async function Home() {
             Upload any drawing. We transform it into a photorealistic scene, then
             animate it into a short video your child will never forget.
           </p>
-          {/* Side-by-side before/after */}
-          <div className="rounded-2xl overflow-hidden bg-[#efe9e6] p-3 flex gap-3 mb-6">
-            <div className="flex-1 rounded-xl overflow-hidden bg-white aspect-square">
+          {/* Side-by-side before/after — same random pair pool as hero slider, static layout */}
+          <div className="mb-6 flex gap-3 rounded-2xl bg-[#efe9e6] p-3">
+            <div className="relative flex-1 aspect-square overflow-hidden rounded-xl bg-white">
               <Image
-                src="/drawing-before.png"
-                alt="Child's original drawing"
-                width={400}
-                height={400}
-                className="w-full h-full object-cover"
+                src={broughtToLifePair.beforeSrc}
+                alt={broughtToLifePair.beforeAlt}
+                fill
+                className="object-cover"
+                sizes="(max-width: 512px) 45vw, 240px"
               />
             </div>
-            <div className="flex-1 rounded-xl overflow-hidden bg-white aspect-square">
+            <div className="relative flex-1 aspect-square overflow-hidden rounded-xl bg-white">
               <Image
-                src="/drawing-after.png"
-                alt="AI-generated CGI result"
-                width={400}
-                height={400}
-                className="w-full h-full object-cover"
+                src={broughtToLifePair.afterSrc}
+                alt={broughtToLifePair.afterAlt}
+                fill
+                className="object-cover"
+                sizes="(max-width: 512px) 45vw, 240px"
               />
             </div>
           </div>
@@ -299,11 +319,21 @@ export default async function Home() {
             style={{ fontFamily: "var(--font-body)", lineHeight: 1.5 }}
           >
             By uploading a drawing you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-[#6B6B6B]">
-              Terms of Service
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[#6B6B6B]"
+            >
+              Terms of Use
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="underline hover:text-[#6B6B6B]">
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[#6B6B6B]"
+            >
               Privacy Policy
             </Link>
             .

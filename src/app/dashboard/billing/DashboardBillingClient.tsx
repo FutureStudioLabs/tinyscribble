@@ -17,6 +17,7 @@ import {
   isTrialingStatus,
 } from "@/lib/billing-entitlement-client";
 import { openStripeBillingPortal } from "@/lib/open-stripe-billing-portal-client";
+import { STARTER_TRIAL_DAYS } from "@/lib/stripe-checkout";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -107,9 +108,19 @@ export function DashboardBillingClient({ email }: Props) {
   const sceneUsed = imageQ?.used ?? Math.max(0, sceneLimit - sceneRemaining);
   const scenePct = sceneLimit > 0 ? Math.min(100, (sceneUsed / sceneLimit) * 100) : 0;
 
-  const planLimitLine = isTrialingStatus(ent?.subscriptionStatus)
-    ? `${TRIAL_FREE_VIDEO_LIMIT} videos · ${TRIAL_FREE_IMAGE_LIMIT} scenes/month`
+  const isTrial = isTrialingStatus(ent?.subscriptionStatus);
+
+  const planHeading = isTrial
+    ? `${STARTER_TRIAL_DAYS}-Day Free Trial`
+    : planTitle(ent?.planInterval ?? null);
+
+  const planLimitLine = isTrial
+    ? `${TRIAL_FREE_VIDEO_LIMIT} video · ${TRIAL_FREE_IMAGE_LIMIT} scenes included on your trial`
     : `${PAID_MONTHLY_VIDEO_LIMIT} videos · ${PAID_MONTHLY_SCENE_LIMIT} scenes/month`;
+
+  const usageSectionTitle = isTrial ? "Trial allowance" : "This month";
+
+  const planDateRowLabel = isTrial ? "Plan starts" : "Next billing";
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
@@ -135,7 +146,7 @@ export function DashboardBillingClient({ email }: Props) {
                     className="text-base font-bold text-[#1A1A1A]"
                     style={{ fontFamily: "var(--font-fredoka)" }}
                   >
-                    {planTitle(ent?.planInterval ?? null)}
+                    {planHeading}
                   </h2>
                   <p
                     className="text-xs text-[#6B6B6B]"
@@ -152,7 +163,7 @@ export function DashboardBillingClient({ email }: Props) {
                   className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9E9E9E]"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
-                  This month
+                  {usageSectionTitle}
                 </p>
 
                 <div className="mb-5">
@@ -208,7 +219,7 @@ export function DashboardBillingClient({ email }: Props) {
                   >
                     {periodEndLabel ? (
                       <>Resets {periodEndLabel}</>
-                    ) : isTrialingStatus(ent?.subscriptionStatus) ? (
+                    ) : isTrial ? (
                       <>Resets when your plan starts</>
                     ) : (
                       <>Resets next billing period</>
@@ -222,7 +233,7 @@ export function DashboardBillingClient({ email }: Props) {
                   className="text-sm text-[#6B6B6B]"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
-                  Next billing
+                  {planDateRowLabel}
                 </span>
                 <span
                   className="text-sm font-bold text-[#1A1A1A]"
@@ -243,7 +254,7 @@ export function DashboardBillingClient({ email }: Props) {
               ) : null}
               </div>
 
-              {isTrialingStatus(ent?.subscriptionStatus) && trialChargeLabel && !nextBillingIso ? (
+              {isTrial && trialChargeLabel && !nextBillingIso ? (
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#FFF5F0] px-4 py-3">
                   <div className="flex min-w-0 items-center gap-2">
                     <HourglassIcon

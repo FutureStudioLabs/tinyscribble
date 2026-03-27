@@ -8,6 +8,7 @@ import { FunnelBottomDock } from "@/components/funnel/FunnelBottomDock";
 import { FunnelPrimaryButton } from "@/components/ui/FunnelPrimaryButton";
 import { formatErrorForUser } from "@/lib/format-user-error";
 import { uploadFormDataWithProgress } from "@/lib/upload-with-progress";
+import { rememberGalleryKey } from "@/lib/pending-gallery-keys";
 import { getPendingUpload, setR2Key } from "@/lib/upload-store";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -58,6 +59,7 @@ export default function LoadingPage() {
     void uploadFormDataWithProgress("/api/upload", formData, setProgress)
       .then(({ key }) => {
         setR2Key(key);
+        rememberGalleryKey(key);
         uploadCompleteRef.current = true;
         setUploadComplete(true);
       })

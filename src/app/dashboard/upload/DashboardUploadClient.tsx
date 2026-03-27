@@ -24,7 +24,7 @@ import {
 } from "@/lib/billing-entitlement-client";
 import { useDashboardShellModalsOptional } from "@/components/dashboard/dashboard-shell-modals-context";
 import { setPendingUpload } from "@/lib/upload-store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function formatPlanStartDate(iso: string | null): string {
   if (!iso) return "";
@@ -77,11 +77,49 @@ function isScenesExhaustedVideoRemaining(ent: BillingEntitlementPayload | null):
 export function DashboardUploadClient() {
   const shellModals = useDashboardShellModalsOptional();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [entitlement, setEntitlement] = useState<BillingEntitlementPayload | null>(null);
   const [entitlementLoading, setEntitlementLoading] = useState(true);
+
+  /** Gallery “New scene” / deep link: land on upload first, then open system picker (iOS-friendly). */
+  useEffect(() => {
+    if (searchParams.get("pick") !== "1") return;
+    if (entitlementLoading) return;
+
+    let cancelled = false;
+    const stripPickParam = () => {
+      router.replace("/dashboard/upload", { scroll: false });
+    };
+
+    const tryOpen = () => {
+      if (cancelled) return;
+      const el = inputRef.current;
+      if (el) {
+        el.click();
+        stripPickParam();
+        return;
+      }
+      window.setTimeout(() => {
+        if (cancelled) return;
+        if (inputRef.current) {
+          inputRef.current.click();
+        }
+        stripPickParam();
+      }, 120);
+    };
+
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(tryOpen);
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
+  }, [searchParams, router, entitlementLoading]);
 
   useEffect(() => {
     void fetch("/api/billing/entitlement", { credentials: "include" })

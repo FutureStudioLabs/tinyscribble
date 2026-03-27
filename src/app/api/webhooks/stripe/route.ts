@@ -1,5 +1,6 @@
 import {
   parseAuthUserIdFromStripeMetadata,
+  setPaidQuotaResetAtIfNullForEmail,
   syncBillingFromCheckoutSession,
   upsertBillingCustomer,
 } from "@/lib/sync-billing-customer";
@@ -101,6 +102,14 @@ export async function POST(request: Request) {
         status: sub.status,
         authUserId,
       });
+
+      const prev = event.data.previous_attributes as { status?: string } | undefined;
+      if (
+        prev?.status === "trialing" &&
+        (sub.status === "active" || sub.status === "past_due")
+      ) {
+        await setPaidQuotaResetAtIfNullForEmail(email);
+      }
 
       console.info(event.type, sub.id, sub.status, email);
       break;

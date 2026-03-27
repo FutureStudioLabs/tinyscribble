@@ -1,6 +1,7 @@
 import { fetchBillingCustomerStripeRowForUser } from "@/lib/billing-customer-read";
 import { priceIdForProduct } from "@/lib/stripe-checkout";
 import { getStripe } from "@/lib/stripe-server";
+import { setPaidQuotaResetAtIfNullForEmail } from "@/lib/sync-billing-customer";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -97,6 +98,8 @@ export async function POST(request: NextRequest) {
         proration_behavior: "none",
       });
     }
+
+    await setPaidQuotaResetAtIfNullForEmail(user.email);
 
     return NextResponse.json({ ok: true as const });
   } catch (e) {

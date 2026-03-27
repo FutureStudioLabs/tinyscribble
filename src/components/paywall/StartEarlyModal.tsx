@@ -250,6 +250,41 @@ export function StartEarlyModal({
                 <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     type="button"
+                    onClick={() => setPlan("monthly")}
+                    className={`relative rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${
+                      plan === "monthly"
+                        ? "border-[#1A1A1A] bg-[#FFF8F5] shadow-sm"
+                        : "border-[#E8E4E0] bg-[#FDF8F5] hover:border-[#E0D8D0]"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                      <div className="min-w-0">
+                        <p
+                          className={`text-[13px] font-bold sm:text-[15px] ${
+                            plan === "monthly" ? "text-[#1A1A1A]" : "text-[#9B9B9B]"
+                          }`}
+                        >
+                          Monthly
+                        </p>
+                        <p className="mt-0.5 text-[16px] font-bold tabular-nums text-[#1A1A1A] sm:mt-1 sm:text-[18px]">
+                          {STARTER_PLAN_DISPLAY.monthly.replace("/mo", "")}
+                          <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[14px]">/mo</span>
+                        </p>
+                      </div>
+                      <span
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                          plan === "monthly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
+                        }`}
+                      >
+                        {plan === "monthly" ? (
+                          <CheckIcon size={14} weight="bold" className="text-white" />
+                        ) : null}
+                      </span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setPlan("yearly")}
                     className={`relative rounded-2xl border-2 p-3 pb-4 pt-4 text-left transition-all sm:p-4 sm:pb-5 sm:pt-5 ${
                       plan === "yearly"
@@ -280,41 +315,6 @@ export function StartEarlyModal({
                         }`}
                       >
                         {plan === "yearly" ? (
-                          <CheckIcon size={14} weight="bold" className="text-white" />
-                        ) : null}
-                      </span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPlan("monthly")}
-                    className={`relative rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${
-                      plan === "monthly"
-                        ? "border-[#1A1A1A] bg-[#FFF8F5] shadow-sm"
-                        : "border-[#E8E4E0] bg-[#FDF8F5] hover:border-[#E0D8D0]"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-1.5 sm:gap-2">
-                      <div className="min-w-0">
-                        <p
-                          className={`text-[13px] font-bold sm:text-[15px] ${
-                            plan === "monthly" ? "text-[#1A1A1A]" : "text-[#9B9B9B]"
-                          }`}
-                        >
-                          Monthly
-                        </p>
-                        <p className="mt-0.5 text-[16px] font-bold tabular-nums text-[#1A1A1A] sm:mt-1 sm:text-[18px]">
-                          {STARTER_PLAN_DISPLAY.monthly.replace("/mo", "")}
-                          <span className="text-[12px] font-semibold text-[#6B6B6B] sm:text-[14px]">/mo</span>
-                        </p>
-                      </div>
-                      <span
-                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-                          plan === "monthly" ? "border-[#1A1A1A] bg-[#1A1A1A]" : "border-[#CCC]"
-                        }`}
-                      >
-                        {plan === "monthly" ? (
                           <CheckIcon size={14} weight="bold" className="text-white" />
                         ) : null}
                       </span>

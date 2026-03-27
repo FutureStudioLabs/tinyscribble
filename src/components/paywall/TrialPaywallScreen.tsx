@@ -387,11 +387,21 @@ export function TrialPaywallScreen() {
             {footerLine}
           </p>
           <p className="text-center text-[11px] text-[#9B9B9B] sm:text-[12px]">
-            <Link href="/terms" className="underline underline-offset-2 hover:text-[#6B6B6B]">
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-[#6B6B6B]"
+            >
               Terms
             </Link>
             <span className="mx-1">·</span>
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-[#6B6B6B]">
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-[#6B6B6B]"
+            >
               Privacy
             </Link>
           </p>

@@ -40,11 +40,21 @@ export function FunnelLegalDisclaimer({ className = "" }: { className?: string }
       style={{ fontFamily: "var(--font-body)" }}
     >
       By continuing you agree to our{" "}
-      <Link href="/terms" className="underline underline-offset-2 hover:text-[#6B6B6B]">
-        Terms of Service
+      <Link
+        href="/terms"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:text-[#6B6B6B]"
+      >
+        Terms of Use
       </Link>{" "}
       and{" "}
-      <Link href="/privacy" className="underline underline-offset-2 hover:text-[#6B6B6B]">
+      <Link
+        href="/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:text-[#6B6B6B]"
+      >
         Privacy Policy
       </Link>
       . Outputs are AI-generated and may vary.

@@ -3,9 +3,14 @@ import {
   getVeoVideoStatus,
   submitVeoVideoJob,
 } from "@/lib/apiyi-video";
+import { PAID_VIDEO_LIMIT_CODE } from "@/constants/plan";
 import { TRIAL_FREE_VIDEO_LIMIT, TRIAL_VIDEO_EXHAUSTED_CODE } from "@/constants/trial";
 import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
 import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
+import {
+  getPaidVideoRemainingForUser,
+  isPaidPlanStatus,
+} from "@/lib/paid-scene-quota";
 import { getObjectBuffer, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryVideosForUser } from "@/lib/trial-gallery-counts";
@@ -63,13 +68,27 @@ export async function POST(request: NextRequest) {
 
   const { supabase, user } = access;
   const { status } = await fetchBillingCustomerStatusForUser(supabase, user);
-  if (status?.trim().toLowerCase() === "trialing") {
+  const statusLower = status?.trim().toLowerCase() ?? "";
+
+  if (statusLower === "trialing") {
     const used = await countGalleryVideosForUser(supabase, user.id);
     if (used >= TRIAL_FREE_VIDEO_LIMIT) {
       return NextResponse.json(
         {
           error: "Your trial includes one free video. Subscribe to create more.",
           code: TRIAL_VIDEO_EXHAUSTED_CODE,
+        },
+        { status: 403 }
+      );
+    }
+  } else if (isPaidPlanStatus(status)) {
+    const remaining = await getPaidVideoRemainingForUser(supabase, user, status);
+    if (remaining != null && remaining < 1) {
+      return NextResponse.json(
+        {
+          error:
+            "You've used all your video credits for this billing period. They reset on your next renewal.",
+          code: PAID_VIDEO_LIMIT_CODE,
         },
         { status: 403 }
       );
@@ -106,6 +125,8 @@ export async function GET(request: NextRequest) {
   const access = await assertVideoAccess();
   if (!access.ok) return access.response;
 
+  const { supabase, user } = access;
+
   const jobId = request.nextUrl.searchParams.get("jobId")?.trim() ?? "";
   if (!jobId || jobId.length > 200) {
     return NextResponse.json({ error: "Invalid jobId" }, { status: 400 });
@@ -129,6 +150,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status });
     }
 
+    const { status: billingStatus } = await fetchBillingCustomerStatusForUser(supabase, user);
+    if (isPaidPlanStatus(billingStatus)) {
+      const remaining = await getPaidVideoRemainingForUser(supabase, user, billingStatus);
+      if (remaining != null && remaining < 1) {
+        return NextResponse.json({
+          status: "failed",
+          error:
+            "You've used all your video credits for this billing period. They reset on your next renewal.",
+          code: PAID_VIDEO_LIMIT_CODE,
+        });
+      }
+    }
+
     // completed — /content may be JSON { url } or raw MP4 / base64 (see apiyi-video)
     const content = await getVeoVideoContent(jobId);
     let buffer: Buffer;
@@ -144,25 +178,19 @@ export async function GET(request: NextRequest) {
     const r2Key = safeVideoKey(jobId);
     await putObjectBuffer(r2Key, buffer, "video/mp4");
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user?.id) {
-      const row: {
-        user_id: string;
-        r2_key: string;
-        thumbnail_r2_key?: string;
-      } = {
-        user_id: user.id,
-        r2_key: r2Key,
-      };
-      if (posterR2Key) {
-        row.thumbnail_r2_key = posterR2Key;
-      }
-      const { error: galleryErr } = await supabase.from("gallery_items").insert(row);
-      if (galleryErr) console.error("gallery_items insert (video)", galleryErr);
+    const row: {
+      user_id: string;
+      r2_key: string;
+      thumbnail_r2_key?: string;
+    } = {
+      user_id: user.id,
+      r2_key: r2Key,
+    };
+    if (posterR2Key) {
+      row.thumbnail_r2_key = posterR2Key;
     }
+    const { error: galleryErr } = await supabase.from("gallery_items").insert(row);
+    if (galleryErr) console.error("gallery_items insert (video)", galleryErr);
 
     return NextResponse.json({
       status: "completed",

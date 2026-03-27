@@ -8,6 +8,7 @@ import {
 import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import { getStripe } from "@/lib/stripe-server";
+import { paidGalleryUsageSinceMs } from "@/lib/paid-usage-since";
 import {
   countGalleryGeneratedForUser,
   countGalleryGeneratedForUserSince,
@@ -169,60 +170,60 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
           if (typeof sub.current_period_end === "number" && sub.current_period_end > 0) {
             billingPeriodEndsAt = new Date(sub.current_period_end * 1000).toISOString();
           }
-          const periodStartSec =
-            typeof sub.current_period_start === "number" && sub.current_period_start > 0
-              ? sub.current_period_start
-              : typeof sub.start_date === "number" && sub.start_date > 0
-                ? sub.start_date
-                : null;
-          if (periodStartSec != null) {
-            const sinceMs = periodStartSec * 1000;
-            const videosUsed = await countGalleryVideosForUserSince(
-              supabase,
-              user.id,
-              sinceMs
-            );
-            const scenesUsed = await countGalleryGeneratedForUserSince(
-              supabase,
-              user.id,
-              sinceMs
-            );
-            const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
-            const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
-            paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
-            paidImageQuota = {
-              used: scenesUsed,
-              remaining: sRem,
-              limit: PAID_MONTHLY_SCENE_LIMIT,
-            };
-          } else {
-            const videosUsed = await countGalleryVideosForUser(supabase, user.id);
-            const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
-            const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
-            const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
-            paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
-            paidImageQuota = {
-              used: scenesUsed,
-              remaining: sRem,
-              limit: PAID_MONTHLY_SCENE_LIMIT,
-            };
-          }
+        }
+        const sinceMs = paidGalleryUsageSinceMs(stripeRow, sub);
+        if (sinceMs != null) {
+          const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
+          const scenesUsed = await countGalleryGeneratedForUserSince(supabase, user.id, sinceMs);
+          const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+          const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+          paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
+          paidImageQuota = {
+            used: scenesUsed,
+            remaining: sRem,
+            limit: PAID_MONTHLY_SCENE_LIMIT,
+          };
+        } else {
+          const videosUsed = await countGalleryVideosForUser(supabase, user.id);
+          const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
+          const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+          const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+          paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
+          paidImageQuota = {
+            used: scenesUsed,
+            remaining: sRem,
+            limit: PAID_MONTHLY_SCENE_LIMIT,
+          };
         }
       } catch (e) {
         console.error("entitlement: paid period", e);
       }
     }
     if (!paidVideoQuota && stripeRow) {
-      const videosUsed = await countGalleryVideosForUser(supabase, user.id);
-      const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
-      const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
-      const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
-      paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
-      paidImageQuota = {
-        used: scenesUsed,
-        remaining: sRem,
-        limit: PAID_MONTHLY_SCENE_LIMIT,
-      };
+      const sinceMs = paidGalleryUsageSinceMs(stripeRow, null);
+      if (sinceMs != null) {
+        const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
+        const scenesUsed = await countGalleryGeneratedForUserSince(supabase, user.id, sinceMs);
+        const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+        const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+        paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
+        paidImageQuota = {
+          used: scenesUsed,
+          remaining: sRem,
+          limit: PAID_MONTHLY_SCENE_LIMIT,
+        };
+      } else {
+        const videosUsed = await countGalleryVideosForUser(supabase, user.id);
+        const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
+        const vRem = Math.max(0, PAID_MONTHLY_VIDEO_LIMIT - videosUsed);
+        const sRem = Math.max(0, PAID_MONTHLY_SCENE_LIMIT - scenesUsed);
+        paidVideoQuota = { remaining: vRem, limit: PAID_MONTHLY_VIDEO_LIMIT };
+        paidImageQuota = {
+          used: scenesUsed,
+          remaining: sRem,
+          limit: PAID_MONTHLY_SCENE_LIMIT,
+        };
+      }
     }
   }
 

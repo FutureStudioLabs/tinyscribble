@@ -67,6 +67,43 @@ export async function upsertBillingCustomer(args: {
 /**
  * Sync from a completed Checkout Session (subscription mode). Safe to call multiple times.
  */
+/**
+ * First time a subscription becomes paid after trial: exclude pre-conversion gallery usage
+ * from Starter monthly video/scene limits. Idempotent (only sets when column is null).
+ */
+export async function setPaidQuotaResetAtIfNullForEmail(email: string): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return;
+
+  try {
+    const admin = createAdminClient();
+    const { data: existing, error: selErr } = await admin
+      .from("billing_customers")
+      .select("paid_quota_reset_at")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (selErr) {
+      console.error("billing_customers paid_quota_reset_at select", selErr);
+      return;
+    }
+    if (existing?.paid_quota_reset_at) return;
+
+    const at = new Date().toISOString();
+    const { error: updErr } = await admin
+      .from("billing_customers")
+      .update({ paid_quota_reset_at: at })
+      .eq("email", normalizedEmail)
+      .is("paid_quota_reset_at", null);
+
+    if (updErr) {
+      console.error("billing_customers paid_quota_reset_at update", updErr);
+    }
+  } catch (err) {
+    console.error("setPaidQuotaResetAtIfNullForEmail", err);
+  }
+}
+
 export async function syncBillingFromCheckoutSession(
   session: Stripe.Checkout.Session,
   stripe: Stripe

@@ -1,12 +1,12 @@
 import { PAID_SCENE_LIMIT_CODE } from "@/constants/plan";
-import {
-  TRIAL_FREE_IMAGE_LIMIT,
-  TRIAL_IMAGE_BATCH_SIZE,
-  TRIAL_IMAGE_LIMIT_CODE,
-} from "@/constants/trial";
+import { TRIAL_FREE_IMAGE_LIMIT, TRIAL_IMAGE_LIMIT_CODE } from "@/constants/trial";
 import { generateNanoBananaImage } from "@/lib/apiyi-image";
+import { isSubscriptionEntitled } from "@/lib/billing-entitlement";
 import { fetchBillingCustomerStatusForUser } from "@/lib/billing-customer-read";
-import { getPaidSceneRemainingForUser } from "@/lib/paid-scene-quota";
+import {
+  getPaidSceneRemainingForUser,
+  isPaidPlanStatus,
+} from "@/lib/paid-scene-quota";
 import { getPresignedGetUrl, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryGeneratedForUser } from "@/lib/trial-gallery-counts";
@@ -46,27 +46,32 @@ export async function POST(request: NextRequest) {
     billingError = b.errorMessage;
   }
 
+  /** Funnel / not subscribed yet: 3 scenes to convert. Anyone with a subscription: 1 scene per run (saves credits). */
   let batchSize = 3;
   let sceneBatchMode: "single" | "triple" = "triple";
 
-  if (user?.id) {
-    const paidRemaining = await getPaidSceneRemainingForUser(supabase, user, billingStatus);
-    if (paidRemaining != null) {
-      if (paidRemaining < 1) {
-        return NextResponse.json(
-          {
-            error:
-              "You've used all your scene credits for this billing period. They reset on your next renewal.",
-            code: PAID_SCENE_LIMIT_CODE,
-          },
-          { status: 403 }
-        );
+  if (user?.id && isSubscriptionEntitled(billingStatus)) {
+    const statusLower = billingStatus!.trim().toLowerCase();
+
+    if (isPaidPlanStatus(billingStatus)) {
+      const paidRemaining = await getPaidSceneRemainingForUser(supabase, user, billingStatus);
+      if (paidRemaining != null) {
+        if (paidRemaining < 1) {
+          return NextResponse.json(
+            {
+              error:
+                "You've used all your scene credits for this billing period. They reset on your next renewal.",
+              code: PAID_SCENE_LIMIT_CODE,
+            },
+            { status: 403 }
+          );
+        }
+        batchSize = 1;
+        sceneBatchMode = "single";
       }
-      batchSize = 1;
-      sceneBatchMode = "single";
-    } else if (!billingError && billingStatus?.trim().toLowerCase() === "trialing") {
+    } else if (statusLower === "trialing" && !billingError) {
       const used = await countGalleryGeneratedForUser(supabase, user.id);
-      if (used + TRIAL_IMAGE_BATCH_SIZE > TRIAL_FREE_IMAGE_LIMIT) {
+      if (used + 1 > TRIAL_FREE_IMAGE_LIMIT) {
         return NextResponse.json(
           {
             error:
@@ -76,6 +81,8 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
+      batchSize = 1;
+      sceneBatchMode = "single";
     }
   }
 
