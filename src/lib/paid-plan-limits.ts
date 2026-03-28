@@ -46,20 +46,6 @@ export function paidMonthlyLimitsForStripePriceId(
   };
 }
 
-/** First subscription line item price id (expanded retrieve). */
-export function subscriptionMainPriceId(
-  sub: Stripe.Subscription | null | undefined
-): string | undefined {
-  if (!sub?.items?.data?.length) return undefined;
-  for (const item of sub.items.data) {
-    const p = item.price;
-    if (!p) continue;
-    const id = typeof p === "string" ? p : p.id;
-    if (id) return id;
-  }
-  return undefined;
-}
-
 /** Line item to replace when upgrading (known plan price), else first item. */
 export function findPlanSubscriptionItemId(sub: Stripe.Subscription): string | undefined {
   const known = knownStripePlanPriceIds();
@@ -68,4 +54,19 @@ export function findPlanSubscriptionItemId(sub: Stripe.Subscription): string | u
     if (pid && known.has(pid)) return item.id;
   }
   return sub.items.data[0]?.id;
+}
+
+/**
+ * Price id used for quota limits — same subscription line as {@link findPlanSubscriptionItemId},
+ * not necessarily `items.data[0]` (Billing Portal / multi-line subs can order items differently).
+ */
+export function subscriptionMainPriceId(
+  sub: Stripe.Subscription | null | undefined
+): string | undefined {
+  if (!sub?.items?.data?.length) return undefined;
+  const planItemId = findPlanSubscriptionItemId(sub);
+  const item = planItemId ? sub.items.data.find((i) => i.id === planItemId) : undefined;
+  const p = item?.price ?? sub.items.data[0]?.price;
+  if (!p) return undefined;
+  return typeof p === "string" ? p : p.id;
 }
