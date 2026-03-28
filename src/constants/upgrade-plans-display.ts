@@ -1,6 +1,7 @@
 /**
  * Family / Power upgrade — display copy (see docs/STRIPE_CLIENT_HANDOFF.md).
- * Annual prices shown as monthly equivalents + yearly totals.
+ * Video/scene caps and plan names stay here. Dollar strings are fallbacks when
+ * `/api/stripe/upgrade-plan-prices` cannot load live Stripe Price data.
  */
 export const UPGRADE_PLANS_DISPLAY = {
   family: {

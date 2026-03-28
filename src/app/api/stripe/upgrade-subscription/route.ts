@@ -1,9 +1,11 @@
+import type { PaidUpgradeTierId } from "@/constants/upgrade-plans-display";
 import { fetchBillingCustomerStripeRowForUser } from "@/lib/billing-customer-read";
-import { priceIdForPaidUpgradeTier } from "@/lib/stripe-upgrade-products";
+import { findPlanSubscriptionItemId } from "@/lib/paid-plan-limits";
 import { getStripe } from "@/lib/stripe-server";
+import { priceIdForPaidUpgradeTier } from "@/lib/stripe-upgrade-products";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import type { PaidUpgradeTierId } from "@/constants/upgrade-plans-display";
+import type Stripe from "stripe";
 
 const TIERS: PaidUpgradeTierId[] = ["family", "power"];
 
@@ -68,19 +70,36 @@ export async function POST(request: NextRequest) {
 
   try {
     const stripe = getStripe();
-    const sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id);
-    const item = sub.items.data[0];
-    if (!item?.id) {
+    const sub = (await stripe.subscriptions.retrieve(row.stripe_subscription_id, {
+      expand: ["items.data.price"],
+    })) as Stripe.Subscription;
+
+    const itemId = findPlanSubscriptionItemId(sub);
+    if (!itemId) {
       return NextResponse.json({ error: "Invalid subscription state." }, { status: 500 });
     }
 
-    const currentPriceId = item.price?.id;
+    const line = sub.items.data.find((i) => i.id === itemId);
+    const currentPriceId =
+      line?.price == null
+        ? undefined
+        : typeof line.price === "string"
+          ? line.price
+          : line.price.id;
+
     if (currentPriceId === priceId) {
       return NextResponse.json({ ok: true as const, alreadyOnPlan: true as const });
     }
 
+    /**
+     * Family/Power are usually separate Stripe Products from Starter — swapping `price` on the
+     * same item often returns an API error. Remove the old line and add the new price.
+     */
     await stripe.subscriptions.update(row.stripe_subscription_id, {
-      items: [{ id: item.id, price: priceId }],
+      items: [
+        { id: itemId, deleted: true },
+        { price: priceId, quantity: 1 },
+      ],
       proration_behavior: "create_prorations",
     });
 

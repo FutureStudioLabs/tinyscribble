@@ -2,12 +2,13 @@
 
 import { UPGRADE_PLANS_DISPLAY, type PaidUpgradeTierId } from "@/constants/upgrade-plans-display";
 import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
+import type { UpgradeTierPriceDisplay } from "@/lib/stripe-upgrade-price-display";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  returnTo?: string;
   /** Dashboard preview toolbar — no API / no Stripe. */
   staticPreview?: boolean;
 };
@@ -15,13 +16,17 @@ type Props = {
 export function PaidUpgradeModal({
   open,
   onClose,
-  returnTo = "/dashboard/upload",
   staticPreview = false,
 }: Props) {
+  const router = useRouter();
   const titleId = useId();
   const [tier, setTier] = useState<PaidUpgradeTierId>("family");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stripePrices, setStripePrices] = useState<{
+    family: UpgradeTierPriceDisplay | null;
+    power: UpgradeTierPriceDisplay | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -39,9 +44,45 @@ export function PaidUpgradeModal({
     };
   }, [open]);
 
-  const safeReturn = returnTo.startsWith("/") ? returnTo : "/dashboard/upload";
-  const family = UPGRADE_PLANS_DISPLAY.family;
-  const power = UPGRADE_PLANS_DISPLAY.power;
+  useEffect(() => {
+    if (!open || staticPreview) return;
+    let cancelled = false;
+    void fetch("/api/stripe/upgrade-plan-prices", { credentials: "include" })
+      .then((r) => r.json() as Promise<{ family?: unknown; power?: unknown }>)
+      .then((data) => {
+        if (cancelled) return;
+        const isTier = (v: unknown): v is UpgradeTierPriceDisplay =>
+          typeof v === "object" &&
+          v !== null &&
+          typeof (v as UpgradeTierPriceDisplay).monthlyEquivalent === "string" &&
+          typeof (v as UpgradeTierPriceDisplay).billedYearly === "string";
+        setStripePrices({
+          family: isTier(data.family) ? data.family : null,
+          power: isTier(data.power) ? data.power : null,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setStripePrices({ family: null, power: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, staticPreview]);
+
+  const familyBase = UPGRADE_PLANS_DISPLAY.family;
+  const powerBase = UPGRADE_PLANS_DISPLAY.power;
+  const family = {
+    ...familyBase,
+    monthlyEquivalent:
+      stripePrices?.family?.monthlyEquivalent ?? familyBase.monthlyEquivalent,
+    billedYearly: stripePrices?.family?.billedYearly ?? familyBase.billedYearly,
+  };
+  const power = {
+    ...powerBase,
+    monthlyEquivalent:
+      stripePrices?.power?.monthlyEquivalent ?? powerBase.monthlyEquivalent,
+    billedYearly: stripePrices?.power?.billedYearly ?? powerBase.billedYearly,
+  };
   const selected = tier === "family" ? family : power;
 
   const handleUpgrade = useCallback(async () => {
@@ -66,14 +107,14 @@ export function PaidUpgradeModal({
       if (data.ok) {
         window.dispatchEvent(new CustomEvent(TRIAL_VIDEO_QUOTA_CHANGED_EVENT));
         onClose();
-        window.location.assign(safeReturn);
+        router.refresh();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
-  }, [tier, onClose, safeReturn, staticPreview]);
+  }, [tier, onClose, router, staticPreview]);
 
   if (!open) return null;
 

@@ -2,7 +2,7 @@
 
 import { LockIcon } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorStateIcon } from "@/components/ErrorStateIcon";
 import { SupportContact } from "@/components/SupportContact";
 import { DashboardUploadLegal } from "@/components/dashboard/DashboardUploadLegal";
@@ -14,6 +14,7 @@ import {
   DASHBOARD_PAYWALL_UPLOAD_HREF,
   uploadVideoPausedSubline,
 } from "@/constants/dashboard-client-copy";
+import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
 import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types";
 import {
   getCreditsResetAt,
@@ -121,7 +122,7 @@ export function DashboardUploadClient() {
     };
   }, [searchParams, router, entitlementLoading]);
 
-  useEffect(() => {
+  const loadEntitlement = useCallback(() => {
     void fetch("/api/billing/entitlement", { credentials: "include" })
       .then((r) => r.json())
       .then((d: BillingEntitlementPayload) => setEntitlement(d))
@@ -141,6 +142,16 @@ export function DashboardUploadClient() {
       )
       .finally(() => setEntitlementLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadEntitlement();
+  }, [loadEntitlement]);
+
+  useEffect(() => {
+    const onRefresh = () => loadEntitlement();
+    window.addEventListener(TRIAL_VIDEO_QUOTA_CHANGED_EVENT, onRefresh);
+    return () => window.removeEventListener(TRIAL_VIDEO_QUOTA_CHANGED_EVENT, onRefresh);
+  }, [loadEntitlement]);
 
   const handleClick = () => {
     setError(null);

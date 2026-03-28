@@ -3,6 +3,7 @@ import { subscriptionUsagePeriodStartSec } from "@/lib/stripe-billing-period-sta
 
 type StripeSubLike = {
   current_period_start?: number | null;
+  items?: { data: Array<{ current_period_start?: number | null }> };
   start_date?: number | null;
   trial_end?: number | null;
   trial_start?: number | null;
