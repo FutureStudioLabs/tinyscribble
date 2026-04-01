@@ -5,7 +5,7 @@ import { DashboardBillingClient } from "./DashboardBillingClient";
 
 export const metadata: Metadata = {
   title: "Billing — TinyScribble",
-  description: "Manage your TinyScribble subscription, trial, and payment methods.",
+  description: "View your TinyScribble plan, renewal date, and subscription settings.",
 };
 
 export default async function DashboardBillingPage() {

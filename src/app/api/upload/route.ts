@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getR2Client, R2_BUCKET_NAME } from "@/lib/r2-server";
+import { requireValidTurnstile } from "@/lib/verify-turnstile";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -15,6 +16,12 @@ const EXT_MAP: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+    const tsToken =
+      (formData.get("cf-turnstile-response") as string | null) ||
+      (formData.get("turnstileToken") as string | null);
+    const tsBlock = await requireValidTurnstile(request, tsToken);
+    if (tsBlock) return tsBlock;
+
     const file = formData.get("file") as File | null;
     if (!file) {
       return NextResponse.json(

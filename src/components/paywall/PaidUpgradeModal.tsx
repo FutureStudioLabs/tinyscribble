@@ -2,6 +2,7 @@
 
 import { UPGRADE_PLANS_DISPLAY, type PaidUpgradeTierId } from "@/constants/upgrade-plans-display";
 import { TRIAL_VIDEO_QUOTA_CHANGED_EVENT } from "@/constants/trial";
+import { formatErrorForUser } from "@/lib/format-user-error";
 import type { UpgradeTierPriceDisplay } from "@/lib/stripe-upgrade-price-display";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
@@ -99,9 +100,19 @@ export function PaidUpgradeModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tier }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      let data: { ok?: boolean; error?: string };
+      try {
+        data = (await res.json()) as { ok?: boolean; error?: string };
+      } catch {
+        setError(
+          formatErrorForUser(
+            res.ok ? "Invalid response from server." : `HTTP ${res.status}`
+          )
+        );
+        return;
+      }
       if (!res.ok) {
-        setError(data.error || "Could not upgrade.");
+        setError(formatErrorForUser(data.error || "Could not upgrade."));
         return;
       }
       if (data.ok) {
@@ -110,7 +121,8 @@ export function PaidUpgradeModal({
         router.refresh();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      const raw = e instanceof Error ? e.message : "Something went wrong.";
+      setError(formatErrorForUser(raw));
     } finally {
       setBusy(false);
     }

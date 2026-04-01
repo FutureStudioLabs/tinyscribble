@@ -1,3 +1,4 @@
+import { syncPaidTierUpgradeBonusesFromStripeSubscription } from "@/lib/plan-upgrade-bonus";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
@@ -168,5 +169,16 @@ export async function syncBillingFromCheckoutSession(
       status: subscriptionStatus,
       authUserId,
     });
+  }
+
+  if (email && subscriptionId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ["items.data.price"],
+      });
+      await syncPaidTierUpgradeBonusesFromStripeSubscription(email, sub);
+    } catch (err) {
+      console.error("plan upgrade bonus after checkout session", err);
+    }
   }
 }

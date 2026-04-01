@@ -11,10 +11,9 @@ import {
 import { FunnelUploadGreatExamples } from "@/components/funnel/FunnelUploadGreatExamples";
 import { FunnelUploadIconBadge } from "@/components/funnel/FunnelUploadIconBadge";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
-import type { ExamplePickInfo } from "@/components/funnel/FunnelUploadGreatExamples";
 import { setPendingUpload } from "@/lib/upload-store";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 const FILE_ACCEPT = "image/jpeg,image/png,image/heic,image/webp";
 
@@ -54,28 +53,6 @@ function UploadPageInner() {
     router.replace("/loading");
     e.target.value = "";
   };
-
-  const handleExamplePick = useCallback(
-    async ({ src, filename }: ExamplePickInfo) => {
-      setError(null);
-      setIsUploading(true);
-      try {
-        const res = await fetch(src);
-        if (!res.ok) throw new Error("fetch failed");
-        const blob = await res.blob();
-        const mime =
-          blob.type ||
-          (filename.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg");
-        const file = new File([blob], filename, { type: mime });
-        setPendingUpload(file);
-        router.replace("/loading");
-      } catch {
-        setError("Could not load that example. Try another or upload your own.");
-        setIsUploading(false);
-      }
-    },
-    [router]
-  );
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#FFF8F5]">
@@ -121,11 +98,7 @@ function UploadPageInner() {
                   {isUploading ? "Uploading…" : "Upload Your Drawing"}
                 </span>
               </label>
-              <FunnelUploadGreatExamples
-                className="mb-0"
-                onExamplePick={handleExamplePick}
-                examplesDisabled={isUploading}
-              />
+              <FunnelUploadGreatExamples className="mb-0" />
               <FunnelBottomDock tone="cream" className="w-full">
                 <div className="mx-auto flex w-full max-w-md flex-col gap-3">
                   <FunnelLegalDisclaimer />

@@ -19,6 +19,7 @@ import { getObjectBuffer, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryVideosForUser } from "@/lib/trial-gallery-counts";
 import type { User } from "@supabase/supabase-js";
+import { requireValidTurnstile } from "@/lib/verify-turnstile";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
@@ -64,9 +65,24 @@ function safeVideoKey(jobId: string): string {
 }
 
 /**
- * POST { cgiKey } — start VEO job from R2 CGI frame. Returns { jobId }.
+ * POST { cgiKey, turnstileToken? } — start VEO job from R2 CGI frame. Returns { jobId }.
  */
 export async function POST(request: NextRequest) {
+  let body: {
+    cgiKey?: string;
+    turnstileToken?: string;
+    cfTurnstileResponse?: string;
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const tsToken = body.turnstileToken ?? body.cfTurnstileResponse;
+  const tsBlock = await requireValidTurnstile(request, tsToken);
+  if (tsBlock) return tsBlock;
+
   const access = await assertVideoAccess();
   if (!access.ok) return access.response;
 
@@ -97,13 +113,6 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-  }
-
-  let body: { cgiKey?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const cgiKey = typeof body.cgiKey === "string" ? body.cgiKey.trim() : "";

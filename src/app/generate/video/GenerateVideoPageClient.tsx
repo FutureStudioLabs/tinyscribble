@@ -15,6 +15,10 @@ import type { BillingEntitlementPayload } from "@/lib/billing-entitlement-types"
 import { getGeneratedVariantKeys } from "@/lib/generated-variants-cache";
 import { rememberGalleryKey } from "@/lib/pending-gallery-keys";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
+import {
+  TurnstileGate,
+  type TurnstileGateHandle,
+} from "@/components/turnstile/TurnstileGate";
 import { ArrowUpRight, DownloadSimple } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -61,6 +65,7 @@ export function GenerateVideoPageClient() {
   const apiyiBaseRef = useRef<string | null>(null);
   const pollAbortRef = useRef(false);
   const postInFlightRef = useRef(false);
+  const turnstileRef = useRef<TurnstileGateHandle>(null);
 
   /** If bootstrap takes too long, offer escape hatch (blocked fetch, lost sessionStorage, etc.) */
   useEffect(() => {
@@ -161,11 +166,15 @@ export function GenerateVideoPageClient() {
     pollAbortRef.current = false;
 
     try {
+      const tsToken = await turnstileRef.current?.obtainToken();
       const res = await fetch("/api/generate-video", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cgiKey: cgi }),
+        body: JSON.stringify({
+          cgiKey: cgi,
+          ...(tsToken ? { turnstileToken: tsToken } : {}),
+        }),
       });
       const data = (await res.json()) as {
         jobId?: string;
@@ -524,6 +533,7 @@ export function GenerateVideoPageClient() {
 
   return (
     <>
+      <TurnstileGate ref={turnstileRef} />
       <SkipTrialModal open={skipTrialOpen} onClose={() => setSkipTrialOpen(false)} />
       <div className="flex h-[100dvh] min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">

@@ -204,28 +204,30 @@ export async function GET(): Promise<NextResponse<BillingEntitlementResponse>> {
     );
 
     if (stripeRow) {
+      const videoCap = videoLimit + stripeRow.upgrade_video_bonus;
+      const sceneCap = sceneLimit + stripeRow.upgrade_scene_bonus;
       const sinceMs = paidGalleryUsageSinceMs(stripeRow, subForPlan);
       if (sinceMs != null) {
         const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
         const scenesUsed = await countGalleryGeneratedForUserSince(supabase, user.id, sinceMs);
-        const vRem = Math.max(0, videoLimit - videosUsed);
-        const sRem = Math.max(0, sceneLimit - scenesUsed);
-        paidVideoQuota = { remaining: vRem, limit: videoLimit };
+        const vRem = Math.max(0, videoCap - videosUsed);
+        const sRem = Math.max(0, sceneCap - scenesUsed);
+        paidVideoQuota = { remaining: vRem, limit: videoCap };
         paidImageQuota = {
           used: scenesUsed,
           remaining: sRem,
-          limit: sceneLimit,
+          limit: sceneCap,
         };
       } else {
         const videosUsed = await countGalleryVideosForUser(supabase, user.id);
         const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
-        const vRem = Math.max(0, videoLimit - videosUsed);
-        const sRem = Math.max(0, sceneLimit - scenesUsed);
-        paidVideoQuota = { remaining: vRem, limit: videoLimit };
+        const vRem = Math.max(0, videoCap - videosUsed);
+        const sRem = Math.max(0, sceneCap - scenesUsed);
+        paidVideoQuota = { remaining: vRem, limit: videoCap };
         paidImageQuota = {
           used: scenesUsed,
           remaining: sRem,
-          limit: sceneLimit,
+          limit: sceneCap,
         };
       }
     }

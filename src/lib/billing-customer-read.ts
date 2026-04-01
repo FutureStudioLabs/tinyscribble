@@ -45,12 +45,20 @@ export async function fetchBillingCustomerStatusForUser(
   return { status: null, errorMessage: null };
 }
 
+function bonusInt(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
 export type BillingCustomerStripeRow = {
   status: string;
   stripe_subscription_id: string | null;
   stripe_customer_id: string | null;
   /** When set, paid monthly quotas count only gallery rows after this instant (trial → Starter). */
   paid_quota_reset_at: string | null;
+  /** Unused scenes from a previous paid tier until the Stripe period ends (see plan-upgrade-bonus). */
+  upgrade_scene_bonus: number;
+  upgrade_video_bonus: number;
 };
 
 /**
@@ -62,7 +70,9 @@ export async function fetchBillingCustomerStripeRowForUser(
 ): Promise<{ row: BillingCustomerStripeRow | null; errorMessage: string | null }> {
   const { data: byUserId, error: errUserId } = await supabase
     .from("billing_customers")
-    .select("status, stripe_subscription_id, stripe_customer_id, paid_quota_reset_at")
+    .select(
+      "status, stripe_subscription_id, stripe_customer_id, paid_quota_reset_at, upgrade_scene_bonus, upgrade_video_bonus"
+    )
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
@@ -83,6 +93,8 @@ export async function fetchBillingCustomerStripeRowForUser(
           typeof byUserId.paid_quota_reset_at === "string"
             ? byUserId.paid_quota_reset_at
             : null,
+        upgrade_scene_bonus: bonusInt(byUserId.upgrade_scene_bonus),
+        upgrade_video_bonus: bonusInt(byUserId.upgrade_video_bonus),
       },
       errorMessage: null,
     };
@@ -95,7 +107,9 @@ export async function fetchBillingCustomerStripeRowForUser(
 
   const { data: byEmail, error: errEmail } = await supabase
     .from("billing_customers")
-    .select("status, stripe_subscription_id, stripe_customer_id, paid_quota_reset_at")
+    .select(
+      "status, stripe_subscription_id, stripe_customer_id, paid_quota_reset_at, upgrade_scene_bonus, upgrade_video_bonus"
+    )
     .eq("email", emailLower)
     .maybeSingle();
 
@@ -116,6 +130,8 @@ export async function fetchBillingCustomerStripeRowForUser(
           typeof byEmail.paid_quota_reset_at === "string"
             ? byEmail.paid_quota_reset_at
             : null,
+        upgrade_scene_bonus: bonusInt(byEmail.upgrade_scene_bonus),
+        upgrade_video_bonus: bonusInt(byEmail.upgrade_video_bonus),
       },
       errorMessage: null,
     };

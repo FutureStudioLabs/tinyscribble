@@ -49,7 +49,9 @@ export function FunnelUploadGreatExamples({
       <div className="mx-auto max-w-[13.5rem] sm:max-w-[15rem]">
         <ul
           className="grid grid-cols-3 gap-2 sm:gap-3"
-          aria-label="Example drawing styles to try"
+          aria-label={
+            interactive ? "Example drawing styles to try" : "Illustrative example drawings"
+          }
         >
           {EXAMPLES.map((item) => (
             <li key={item.src}>
@@ -71,7 +73,7 @@ export function FunnelUploadGreatExamples({
                   />
                 </button>
               ) : (
-                <div className="relative aspect-square overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/[0.04]">
+                <div className="relative aspect-square overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/[0.04] pointer-events-none select-none">
                   <Image
                     src={item.src}
                     alt={item.alt}

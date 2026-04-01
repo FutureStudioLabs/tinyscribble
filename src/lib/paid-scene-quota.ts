@@ -29,6 +29,20 @@ export function isPaidPlanStatus(status: string | null | undefined): boolean {
   return s === "active" || s === "past_due";
 }
 
+function sceneCapWithBonus(
+  row: BillingCustomerStripeRow | null | undefined,
+  base: number
+): number {
+  return base + (row?.upgrade_scene_bonus ?? 0);
+}
+
+function videoCapWithBonus(
+  row: BillingCustomerStripeRow | null | undefined,
+  base: number
+): number {
+  return base + (row?.upgrade_video_bonus ?? 0);
+}
+
 async function loadStripeSubscriptionForBillingRow(
   stripe: Stripe,
   row: BillingCustomerStripeRow
@@ -92,6 +106,7 @@ export async function getPaidSceneRemainingForUser(
 
   if (!stripeRow?.stripe_subscription_id && !stripeRow?.stripe_customer_id) {
     const { sceneLimit } = await limitsFromSub();
+    const cap = sceneCapWithBonus(stripeRow, sceneLimit);
     if (stripeRow) {
       const sinceMs = paidGalleryUsageSinceMs(stripeRow, null);
       if (sinceMs != null) {
@@ -100,11 +115,11 @@ export async function getPaidSceneRemainingForUser(
           user.id,
           sinceMs
         );
-        return Math.max(0, sceneLimit - scenesUsed);
+        return Math.max(0, cap - scenesUsed);
       }
     }
     const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
-    return Math.max(0, sceneLimit - scenesUsed);
+    return Math.max(0, cap - scenesUsed);
   }
 
   try {
@@ -113,18 +128,20 @@ export async function getPaidSceneRemainingForUser(
     const { sceneLimit } = paidMonthlyLimitsForStripePriceId(
       sub ? subscriptionMainPriceId(sub as unknown as Stripe.Subscription) : undefined
     );
+    const cap = sceneCapWithBonus(stripeRow, sceneLimit);
     const sinceMs = paidGalleryUsageSinceMs(stripeRow, sub);
     if (sinceMs != null) {
       const scenesUsed = await countGalleryGeneratedForUserSince(supabase, user.id, sinceMs);
-      return Math.max(0, sceneLimit - scenesUsed);
+      return Math.max(0, cap - scenesUsed);
     }
   } catch (e) {
     console.error("paid-scene-quota: stripe period", e);
   }
 
   const { sceneLimit } = await limitsFromSub();
+  const cap = sceneCapWithBonus(stripeRow, sceneLimit);
   const scenesUsed = await countGalleryGeneratedForUser(supabase, user.id);
-  return Math.max(0, sceneLimit - scenesUsed);
+  return Math.max(0, cap - scenesUsed);
 }
 
 /**
@@ -158,15 +175,16 @@ export async function getPaidVideoRemainingForUser(
 
   if (!stripeRow?.stripe_subscription_id && !stripeRow?.stripe_customer_id) {
     const { videoLimit } = await limitsFromSub();
+    const cap = videoCapWithBonus(stripeRow, videoLimit);
     if (stripeRow) {
       const sinceMs = paidGalleryUsageSinceMs(stripeRow, null);
       if (sinceMs != null) {
         const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
-        return Math.max(0, videoLimit - videosUsed);
+        return Math.max(0, cap - videosUsed);
       }
     }
     const videosUsed = await countGalleryVideosForUser(supabase, user.id);
-    return Math.max(0, videoLimit - videosUsed);
+    return Math.max(0, cap - videosUsed);
   }
 
   try {
@@ -175,16 +193,18 @@ export async function getPaidVideoRemainingForUser(
     const { videoLimit } = paidMonthlyLimitsForStripePriceId(
       sub ? subscriptionMainPriceId(sub as unknown as Stripe.Subscription) : undefined
     );
+    const cap = videoCapWithBonus(stripeRow, videoLimit);
     const sinceMs = paidGalleryUsageSinceMs(stripeRow, sub);
     if (sinceMs != null) {
       const videosUsed = await countGalleryVideosForUserSince(supabase, user.id, sinceMs);
-      return Math.max(0, videoLimit - videosUsed);
+      return Math.max(0, cap - videosUsed);
     }
   } catch (e) {
     console.error("paid-video-quota: stripe period", e);
   }
 
   const { videoLimit } = await limitsFromSub();
+  const cap = videoCapWithBonus(stripeRow, videoLimit);
   const videosUsed = await countGalleryVideosForUser(supabase, user.id);
-  return Math.max(0, videoLimit - videosUsed);
+  return Math.max(0, cap - videosUsed);
 }

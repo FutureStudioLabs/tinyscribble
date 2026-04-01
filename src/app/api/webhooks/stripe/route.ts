@@ -1,3 +1,4 @@
+import { syncPaidTierUpgradeBonusesFromStripeSubscription } from "@/lib/plan-upgrade-bonus";
 import {
   parseAuthUserIdFromStripeMetadata,
   setPaidQuotaResetAtIfNullForEmail,
@@ -102,6 +103,8 @@ export async function POST(request: Request) {
         status: sub.status,
         authUserId,
       });
+
+      await syncPaidTierUpgradeBonusesFromStripeSubscription(email, sub);
 
       const prev = event.data.previous_attributes as { status?: string } | undefined;
       if (

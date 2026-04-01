@@ -1,11 +1,14 @@
 import type { PaidUpgradeTierId } from "@/constants/upgrade-plans-display";
 import { fetchBillingCustomerStripeRowForUser } from "@/lib/billing-customer-read";
+import { syncPaidTierUpgradeBonusesFromStripeSubscription } from "@/lib/plan-upgrade-bonus";
 import { findPlanSubscriptionItemId } from "@/lib/paid-plan-limits";
 import { getStripe } from "@/lib/stripe-server";
 import { priceIdForPaidUpgradeTier } from "@/lib/stripe-upgrade-products";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
+
+export const maxDuration = 60;
 
 const TIERS: PaidUpgradeTierId[] = ["family", "power"];
 
@@ -102,6 +105,11 @@ export async function POST(request: NextRequest) {
       ],
       proration_behavior: "create_prorations",
     });
+
+    const updated = await stripe.subscriptions.retrieve(row.stripe_subscription_id, {
+      expand: ["items.data.price"],
+    });
+    await syncPaidTierUpgradeBonusesFromStripeSubscription(user.email, updated);
 
     return NextResponse.json({ ok: true as const });
   } catch (e) {

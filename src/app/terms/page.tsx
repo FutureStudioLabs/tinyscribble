@@ -131,12 +131,12 @@ export default function TermsOfUsePage() {
           4.4 Cancellation
         </h3>
         <p>
-          You may cancel your subscription at any time through the Stripe billing
-          portal accessible via your account settings. Cancellation stops future
-          charges. Your subscription and access to the Service will continue until
-          the end of the current billing period. Annual plan cancellations stop
-          auto-renewal but do not entitle you to a pro-rated refund for the unused
-          portion of the year.
+          You may cancel your subscription at any time from the Billing page in your
+          account. Cancellation stops future charges. Your subscription and access to
+          the Service will continue until the end of the current billing period (or
+          immediately if you are on a free trial and cancel before you are charged).
+          Annual plan cancellations stop auto-renewal but do not entitle you to a
+          pro-rated refund for the unused portion of the year.
         </p>
         <h3 className={h3} style={h2Style}>
           4.5 Refunds
