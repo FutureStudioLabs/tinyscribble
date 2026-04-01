@@ -10,7 +10,6 @@ import {
 import { getPresignedGetUrl, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryGeneratedForUser } from "@/lib/trial-gallery-counts";
-import { requireValidTurnstile } from "@/lib/verify-turnstile";
 import {
   checkAnonGenerationLimit,
   clientIpFromRequest,
@@ -27,17 +26,13 @@ function ndjsonLine(obj: unknown): Uint8Array {
 
 export async function POST(request: NextRequest) {
   let r2Key: string;
-  let turnstileToken: string | undefined;
   let fingerprintId: string | null = null;
   try {
     const body = (await request.json()) as {
       r2Key?: string;
-      turnstileToken?: string;
-      cfTurnstileResponse?: string;
       fingerprintId?: string;
     };
     r2Key = body?.r2Key ?? "";
-    turnstileToken = body.turnstileToken ?? body.cfTurnstileResponse;
     if (typeof body.fingerprintId === "string" && body.fingerprintId.trim()) {
       fingerprintId = body.fingerprintId.trim().slice(0, 128);
     }
@@ -55,11 +50,6 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    const tsBlock = await requireValidTurnstile(request, turnstileToken);
-    if (tsBlock) return tsBlock;
-  }
 
   let billingStatus: string | null = null;
   let billingError: string | null = null;

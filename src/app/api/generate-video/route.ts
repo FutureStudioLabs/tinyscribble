@@ -19,7 +19,6 @@ import { getObjectBuffer, putObjectBuffer } from "@/lib/r2-server";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryVideosForUser } from "@/lib/trial-gallery-counts";
 import type { User } from "@supabase/supabase-js";
-import { requireValidTurnstile } from "@/lib/verify-turnstile";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
@@ -65,13 +64,11 @@ function safeVideoKey(jobId: string): string {
 }
 
 /**
- * POST { cgiKey, turnstileToken? } — start VEO job from R2 CGI frame. Returns { jobId }.
+ * POST { cgiKey } — start VEO job from R2 CGI frame. Returns { jobId }.
  */
 export async function POST(request: NextRequest) {
   let body: {
     cgiKey?: string;
-    turnstileToken?: string;
-    cfTurnstileResponse?: string;
   };
   try {
     body = await request.json();
@@ -80,12 +77,7 @@ export async function POST(request: NextRequest) {
   }
 
   const access = await assertVideoAccess();
-  if (!access.ok) {
-    const tsToken = body.turnstileToken ?? body.cfTurnstileResponse;
-    const tsBlock = await requireValidTurnstile(request, tsToken);
-    if (tsBlock) return tsBlock;
-    return access.response;
-  }
+  if (!access.ok) return access.response;
 
   const { supabase, user } = access;
   const { status } = await fetchBillingCustomerStatusForUser(supabase, user);
