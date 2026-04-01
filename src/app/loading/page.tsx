@@ -11,10 +11,6 @@ import { shareInFlight } from "@/lib/in-flight-by-key";
 import { uploadFormDataWithProgress } from "@/lib/upload-with-progress";
 import { rememberGalleryKey } from "@/lib/pending-gallery-keys";
 import { getPendingUpload, setR2Key } from "@/lib/upload-store";
-import {
-  TurnstileGate,
-  type TurnstileGateHandle,
-} from "@/components/turnstile/TurnstileGate";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -33,7 +29,6 @@ export default function LoadingPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const uploadStartedRef = useRef(false);
-  const turnstileRef = useRef<TurnstileGateHandle>(null);
 
   /** SSR + first client paint must match; read in-memory upload only after hydration. */
   const [upload, setUpload] = useState<ReturnType<typeof getPendingUpload>>(null);
@@ -62,10 +57,8 @@ export default function LoadingPage() {
     const uploadKey = `post:/api/upload:${file.name}:${file.size}:${file.lastModified}`;
 
     void shareInFlight(uploadKey, async () => {
-      const tsToken = await turnstileRef.current?.obtainToken();
       const formData = new FormData();
       formData.append("file", file);
-      if (tsToken) formData.append("cf-turnstile-response", tsToken);
 
       const { key } = await uploadFormDataWithProgress(
         "/api/upload",
@@ -117,7 +110,6 @@ export default function LoadingPage() {
 
   return (
     <div className="flex h-[100dvh] min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0] transition-opacity duration-300">
-      <TurnstileGate ref={turnstileRef} />
       <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-6">
         <Logo />
         <HeaderUserAvatar />

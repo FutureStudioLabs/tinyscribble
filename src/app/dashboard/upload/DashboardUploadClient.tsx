@@ -24,7 +24,6 @@ import {
   isTrialingStatus,
 } from "@/lib/billing-entitlement-client";
 import { useDashboardShellModalsOptional } from "@/components/dashboard/dashboard-shell-modals-context";
-import { preloadTurnstileScript } from "@/components/turnstile/TurnstileGate";
 import { setPendingUpload } from "@/lib/upload-store";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -147,10 +146,6 @@ export function DashboardUploadClient() {
   useEffect(() => {
     loadEntitlement();
   }, [loadEntitlement]);
-
-  useEffect(() => {
-    preloadTurnstileScript();
-  }, []);
 
   useEffect(() => {
     const onRefresh = () => loadEntitlement();
