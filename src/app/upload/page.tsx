@@ -11,6 +11,7 @@ import {
 import { FunnelUploadGreatExamples } from "@/components/funnel/FunnelUploadGreatExamples";
 import { FunnelUploadIconBadge } from "@/components/funnel/FunnelUploadIconBadge";
 import { funnelPrimaryButtonClassName } from "@/components/ui/FunnelPrimaryButton";
+import { preloadTurnstileScript } from "@/components/turnstile/TurnstileGate";
 import { setPendingUpload } from "@/lib/upload-store";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -23,6 +24,10 @@ function UploadPageInner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    preloadTurnstileScript();
+  }, []);
 
   useEffect(() => {
     if (searchParams.get("pick") !== "1") return;

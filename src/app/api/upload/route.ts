@@ -16,11 +16,19 @@ const EXT_MAP: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const tsToken =
-      (formData.get("cf-turnstile-response") as string | null) ||
-      (formData.get("turnstileToken") as string | null);
-    const tsBlock = await requireValidTurnstile(request, tsToken);
-    if (tsBlock) return tsBlock;
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.id) {
+      const tsToken =
+        (formData.get("cf-turnstile-response") as string | null) ||
+        (formData.get("turnstileToken") as string | null);
+      const tsBlock = await requireValidTurnstile(request, tsToken);
+      if (tsBlock) return tsBlock;
+    }
 
     const file = formData.get("file") as File | null;
     if (!file) {
@@ -48,11 +56,6 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    // If user is authenticated, add to gallery
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (user?.id) {
       await supabase.from("gallery_items").insert({
         user_id: user.id,
