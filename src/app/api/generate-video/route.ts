@@ -79,12 +79,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const tsToken = body.turnstileToken ?? body.cfTurnstileResponse;
-  const tsBlock = await requireValidTurnstile(request, tsToken);
-  if (tsBlock) return tsBlock;
-
   const access = await assertVideoAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) {
+    const tsToken = body.turnstileToken ?? body.cfTurnstileResponse;
+    const tsBlock = await requireValidTurnstile(request, tsToken);
+    if (tsBlock) return tsBlock;
+    return access.response;
+  }
 
   const { supabase, user } = access;
   const { status } = await fetchBillingCustomerStatusForUser(supabase, user);

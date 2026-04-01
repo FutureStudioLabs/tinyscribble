@@ -51,13 +51,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const tsBlock = await requireValidTurnstile(request, turnstileToken);
-  if (tsBlock) return tsBlock;
-
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    const tsBlock = await requireValidTurnstile(request, turnstileToken);
+    if (tsBlock) return tsBlock;
+  }
 
   let billingStatus: string | null = null;
   let billingError: string | null = null;
