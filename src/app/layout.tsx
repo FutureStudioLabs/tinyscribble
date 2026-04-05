@@ -1,6 +1,7 @@
 import { AuthBroadcastListener } from "@/components/auth/AuthBroadcastListener";
 import { GlobalUpload } from "@/components/GlobalUpload";
 import { PendingGalleryClaim } from "@/components/PendingGalleryClaim";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -41,10 +42,12 @@ export default function RootLayout({
         className="min-h-full flex flex-col font-sans"
         suppressHydrationWarning
       >
-        <AuthBroadcastListener />
-        <GlobalUpload />
-        <PendingGalleryClaim />
-        {children}
+        <PostHogProvider>
+          <AuthBroadcastListener />
+          <GlobalUpload />
+          <PendingGalleryClaim />
+          {children}
+        </PostHogProvider>
       </body>
     </html>
   );
