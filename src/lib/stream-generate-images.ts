@@ -19,18 +19,22 @@ export type StreamGenerateImagesResult = {
 export async function streamGenerateImages(
   r2Key: string,
   onProgress: (percent: number) => void,
-  _obtainTurnstileToken?: unknown,
+  obtainTurnstileToken?: () => Promise<string | null | undefined>,
   obtainFingerprintId?: () => Promise<string | undefined>
 ): Promise<StreamGenerateImagesResult> {
   return shareInFlight(`post:/api/generate-images:${r2Key}`, async () => {
-    const fingerprintId = obtainFingerprintId ? await obtainFingerprintId() : undefined;
-    return streamGenerateImagesOnce(r2Key, onProgress, fingerprintId);
+    const [turnstileToken, fingerprintId] = await Promise.all([
+      obtainTurnstileToken ? obtainTurnstileToken() : Promise.resolve(undefined),
+      obtainFingerprintId ? obtainFingerprintId() : Promise.resolve(undefined),
+    ]);
+    return streamGenerateImagesOnce(r2Key, onProgress, turnstileToken ?? undefined, fingerprintId);
   });
 }
 
 async function streamGenerateImagesOnce(
   r2Key: string,
   onProgress: (percent: number) => void,
+  turnstileToken?: string,
   fingerprintId?: string
 ): Promise<StreamGenerateImagesResult> {
   const res = await fetch("/api/generate-images", {
@@ -41,6 +45,7 @@ async function streamGenerateImagesOnce(
     },
     body: JSON.stringify({
       r2Key,
+      ...(turnstileToken ? { turnstileToken } : {}),
       ...(fingerprintId ? { fingerprintId } : {}),
     }),
     credentials: "include",

@@ -20,6 +20,10 @@ import {
 import { rememberGalleryKeys } from "@/lib/pending-gallery-keys";
 import { streamGenerateImages } from "@/lib/stream-generate-images";
 import { getPendingUpload, getRestoredUploadState } from "@/lib/upload-store";
+import {
+  TurnstileGate,
+  type TurnstileGateHandle,
+} from "@/components/turnstile/TurnstileGate";
 import { loadFingerprint } from "@/lib/fingerprint";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -60,6 +64,7 @@ export default function GeneratePage() {
   const [skipTrialOpen, setSkipTrialOpen] = useState(false);
   const startedRef = useRef(false);
   const variantKeysRef = useRef<string[] | null>(null);
+  const turnstileRef = useRef<TurnstileGateHandle>(null);
 
   useEffect(() => {
     variantKeysRef.current = variantKeys;
@@ -99,7 +104,7 @@ export default function GeneratePage() {
       const { keys: newKeys, sceneBatchMode: mode } = await streamGenerateImages(
         pending.r2Key,
         setGenerateProgress,
-        undefined,
+        () => turnstileRef.current?.obtainToken() ?? Promise.resolve(undefined),
         loadFingerprint
       );
       setSceneBatchMode(mode);
@@ -176,6 +181,7 @@ export default function GeneratePage() {
 
   return (
     <div className="flex h-[100dvh] min-h-[100dvh] flex-col bg-gradient-to-b from-[#FFF8F5] to-[#FFE8E0]">
+      <TurnstileGate ref={turnstileRef} />
       <SkipTrialModal
         open={skipTrialOpen}
         variant="image"
