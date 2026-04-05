@@ -42,8 +42,9 @@ export function isTurnstileEnforced(): boolean {
 }
 
 /**
- * If `TURNSTILE_SECRET_KEY` is set, require a valid token or return a 403 JSON response.
- * Returns `null` when verification passed or Turnstile is not configured.
+ * If `TURNSTILE_SECRET_KEY` is set and a token is provided, verify it.
+ * Returns a 403 only if a token was provided but is invalid (rejects fakes).
+ * Returns `null` when no token was sent, verification passed, or Turnstile is not configured.
  */
 export async function requireValidTurnstile(
   request: NextRequest,
@@ -51,10 +52,7 @@ export async function requireValidTurnstile(
 ): Promise<NextResponse | null> {
   if (!isTurnstileEnforced()) return null;
   if (!token || typeof token !== "string" || token.length < 3) {
-    return NextResponse.json(
-      { error: "Security check failed. Please refresh the page and try again." },
-      { status: 403 }
-    );
+    return null;
   }
   const ok = await siteverify(token, clientIpFromRequest(request));
   if (ok) return null;
