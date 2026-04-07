@@ -154,7 +154,7 @@ export function DashboardUploadClient() {
   }, [loadEntitlement]);
 
   const handleClick = () => {
-    router.push("/upload");
+    router.push("/upload?pick=1");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
