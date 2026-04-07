@@ -210,7 +210,6 @@ export async function GET(request: NextRequest) {
     const { error: galleryErr } = await supabase.from("gallery_items").insert(row);
     if (galleryErr) console.error("gallery_items insert (video)", galleryErr);
 
-    // Fire-and-forget "video ready" email
     try {
       const email = user.email;
       if (email) {
@@ -219,12 +218,15 @@ export async function GET(request: NextRequest) {
           typeof metaName === "string" && metaName.trim()
             ? metaName.trim().split(/\s+/)[0]
             : email.split("@")[0];
-        void sendVideoReadyEmail({ to: email, firstName }).catch((err) =>
-          console.error("video-ready email failed", err)
-        );
+        console.info("video-ready email: sending to", email);
+        sendVideoReadyEmail({ to: email, firstName })
+          .then(() => console.info("video-ready email: sent to", email))
+          .catch((err) => console.error("video-ready email: failed for", email, err));
+      } else {
+        console.warn("video-ready email: no email on user", user.id);
       }
-    } catch {
-      /* email is best-effort */
+    } catch (e) {
+      console.error("video-ready email: unexpected error", e);
     }
 
     return NextResponse.json({

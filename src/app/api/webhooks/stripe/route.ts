@@ -167,15 +167,18 @@ export async function POST(request: Request) {
             }
           }
 
-          void sendPlanActiveEmail({
+          console.info("plan-active email: sending to", email);
+          sendPlanActiveEmail({
             to: email,
             firstName,
             planLabel,
             amountFormatted,
             intervalLabel,
-          }).catch((err) => console.error("plan-active email failed", err));
+          })
+            .then(() => console.info("plan-active email: sent to", email))
+            .catch((err) => console.error("plan-active email: failed for", email, err));
         } catch (err) {
-          console.error("plan-active email setup failed", err);
+          console.error("plan-active email: setup failed", err);
         }
       }
 

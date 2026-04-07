@@ -1,8 +1,27 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.warn("RESEND_API_KEY is not set — emails will not be sent");
+    return null;
+  }
+  return new Resend(key);
+}
 
 const FROM = "TinyScribble <no-reply@tinyscribble.com>";
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/* ------------------------------------------------------------------ */
+/*  Trial Ending Reminder                                              */
+/* ------------------------------------------------------------------ */
 
 export interface TrialReminderParams {
   to: string;
@@ -19,6 +38,9 @@ export async function sendTrialEndingReminder({
   trialEndTime,
   priceLine,
 }: TrialReminderParams) {
+  const resend = getResendClient();
+  if (!resend) return;
+
   const subject = `Your free trial ends tomorrow`;
 
   const text = `Hi ${firstName},
@@ -59,14 +81,6 @@ Questions? Just reply to this email.
   }
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 /* ------------------------------------------------------------------ */
 /*  Video Ready                                                        */
 /* ------------------------------------------------------------------ */
@@ -77,6 +91,9 @@ export interface VideoReadyParams {
 }
 
 export async function sendVideoReadyEmail({ to, firstName }: VideoReadyParams) {
+  const resend = getResendClient();
+  if (!resend) return;
+
   const subject = "Your video is ready!";
 
   const text = `Hi ${firstName},
@@ -133,6 +150,9 @@ export async function sendPlanActiveEmail({
   amountFormatted,
   intervalLabel,
 }: PlanActiveParams) {
+  const resend = getResendClient();
+  if (!resend) return;
+
   const subject = "Your plan is now active!";
 
   const text = `Hi ${firstName},
