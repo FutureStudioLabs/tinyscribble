@@ -16,6 +16,7 @@ import {
   isPaidPlanStatus,
 } from "@/lib/paid-scene-quota";
 import { getObjectBuffer, putObjectBuffer } from "@/lib/r2-server";
+import { sendVideoReadyEmail } from "@/lib/resend";
 import { createClient } from "@/lib/supabase/server";
 import { countGalleryVideosForUser } from "@/lib/trial-gallery-counts";
 import type { User } from "@supabase/supabase-js";
@@ -208,6 +209,23 @@ export async function GET(request: NextRequest) {
     }
     const { error: galleryErr } = await supabase.from("gallery_items").insert(row);
     if (galleryErr) console.error("gallery_items insert (video)", galleryErr);
+
+    // Fire-and-forget "video ready" email
+    try {
+      const email = user.email;
+      if (email) {
+        const metaName = user.user_metadata?.full_name;
+        const firstName =
+          typeof metaName === "string" && metaName.trim()
+            ? metaName.trim().split(/\s+/)[0]
+            : email.split("@")[0];
+        void sendVideoReadyEmail({ to: email, firstName }).catch((err) =>
+          console.error("video-ready email failed", err)
+        );
+      }
+    } catch {
+      /* email is best-effort */
+    }
 
     return NextResponse.json({
       status: "completed",

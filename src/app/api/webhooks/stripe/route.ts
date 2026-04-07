@@ -1,4 +1,11 @@
+import { subscriptionMainPriceId } from "@/lib/paid-plan-limits";
 import { syncPaidTierUpgradeBonusesFromStripeSubscription } from "@/lib/plan-upgrade-bonus";
+import { sendPlanActiveEmail } from "@/lib/resend";
+import {
+  paidPlanDisplayTierFromPriceId,
+  tinyScribblePlanLabel,
+} from "@/lib/stripe-subscription-plan-display";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   parseAuthUserIdFromStripeMetadata,
   setPaidQuotaResetAtIfNullForEmail,
@@ -112,6 +119,64 @@ export async function POST(request: Request) {
         (sub.status === "active" || sub.status === "past_due")
       ) {
         await setPaidQuotaResetAtIfNullForEmail(email);
+
+        // Send "plan active" email
+        try {
+          const fullSub = await stripe.subscriptions.retrieve(sub.id, {
+            expand: ["items.data.price"],
+          });
+          const priceId = subscriptionMainPriceId(fullSub);
+          const tier = paidPlanDisplayTierFromPriceId(priceId);
+          const planLabel = tinyScribblePlanLabel(tier);
+
+          const mainItem = fullSub.items.data[0];
+          const priceObj =
+            mainItem?.price && typeof mainItem.price === "object"
+              ? mainItem.price
+              : null;
+          const unitAmount =
+            priceObj && typeof priceObj.unit_amount === "number"
+              ? priceObj.unit_amount
+              : null;
+          const currency =
+            priceObj && typeof priceObj.currency === "string"
+              ? priceObj.currency
+              : "usd";
+          const interval = priceObj?.recurring?.interval;
+          const intervalLabel =
+            interval === "year" ? "per year" : interval === "month" ? "per month" : "";
+          const amountFormatted =
+            unitAmount != null
+              ? new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: currency.toUpperCase(),
+                }).format(unitAmount / 100)
+              : "";
+
+          let firstName = email.split("@")[0];
+          if (authUserId) {
+            try {
+              const admin = createAdminClient();
+              const { data: authData } = await admin.auth.admin.getUserById(authUserId);
+              const fullName = authData?.user?.user_metadata?.full_name;
+              if (typeof fullName === "string" && fullName.trim()) {
+                firstName = fullName.trim().split(/\s+/)[0];
+              }
+            } catch {
+              /* fall back to email prefix */
+            }
+          }
+
+          void sendPlanActiveEmail({
+            to: email,
+            firstName,
+            planLabel,
+            amountFormatted,
+            intervalLabel,
+          }).catch((err) => console.error("plan-active email failed", err));
+        } catch (err) {
+          console.error("plan-active email setup failed", err);
+        }
       }
 
       console.info(event.type, sub.id, sub.status, email);

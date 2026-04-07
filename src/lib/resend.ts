@@ -66,3 +66,110 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/* ------------------------------------------------------------------ */
+/*  Video Ready                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface VideoReadyParams {
+  to: string;
+  firstName: string;
+}
+
+export async function sendVideoReadyEmail({ to, firstName }: VideoReadyParams) {
+  const subject = "Your video is ready!";
+
+  const text = `Hi ${firstName},
+
+Great news — your TinyScribble video is ready!
+
+Head over to your gallery to watch, download, and share it:
+https://tinyscribble.com/dashboard/gallery
+
+We can't wait for you to see the magic.
+— The TinyScribble Team`;
+
+  const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 16px; color: #1a1a1a; line-height: 1.6;">
+  <p>Hi ${escapeHtml(firstName)},</p>
+
+  <p>Great news &mdash; your TinyScribble video is ready! 🎬</p>
+
+  <p>Head over to your <a href="https://tinyscribble.com/dashboard/gallery" style="color: #6d28d9; font-weight: 600;">gallery</a> to watch, download, and share it.</p>
+
+  <p>We can&rsquo;t wait for you to see the magic.</p>
+
+  <p>&mdash; The TinyScribble Team</p>
+</div>`;
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  if (error) {
+    throw new Error(`Resend send failed (video-ready): ${error.message}`);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Plan Active (trial → paid)                                         */
+/* ------------------------------------------------------------------ */
+
+export interface PlanActiveParams {
+  to: string;
+  firstName: string;
+  planLabel: string;
+  amountFormatted: string;
+  intervalLabel: string;
+}
+
+export async function sendPlanActiveEmail({
+  to,
+  firstName,
+  planLabel,
+  amountFormatted,
+  intervalLabel,
+}: PlanActiveParams) {
+  const subject = "Your plan is now active!";
+
+  const text = `Hi ${firstName},
+
+Your free trial has ended and your ${planLabel} plan is now active at ${amountFormatted} ${intervalLabel}.
+
+You now have full access to create videos, build your Memory Book, and turn your little one's drawings into magical animations.
+
+You can manage your plan anytime from your account settings:
+https://tinyscribble.com/dashboard/billing
+
+Questions? Just reply to this email.
+— The TinyScribble Team`;
+
+  const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 16px; color: #1a1a1a; line-height: 1.6;">
+  <p>Hi ${escapeHtml(firstName)},</p>
+
+  <p>Your free trial has ended and your <strong>${escapeHtml(planLabel)}</strong> plan is now active at <strong>${escapeHtml(amountFormatted)} ${escapeHtml(intervalLabel)}</strong>.</p>
+
+  <p>You now have full access to create videos, build your Memory Book, and turn your little one&rsquo;s drawings into magical animations.</p>
+
+  <p>You can manage your plan anytime from your <a href="https://tinyscribble.com/dashboard/billing" style="color: #6d28d9;">account settings</a>.</p>
+
+  <p>Questions? Just reply to this email.</p>
+
+  <p>&mdash; The TinyScribble Team</p>
+</div>`;
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  if (error) {
+    throw new Error(`Resend send failed (plan-active): ${error.message}`);
+  }
+}
