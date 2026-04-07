@@ -154,8 +154,7 @@ export function DashboardUploadClient() {
   }, [loadEntitlement]);
 
   const handleClick = () => {
-    setError(null);
-    inputRef.current?.click();
+    router.push("/upload");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,7 +166,7 @@ export function DashboardUploadClient() {
     setError(null);
     setPendingUpload(file);
     setIsUploading(true);
-    router.replace("/loading");
+    router.push("/loading");
     e.target.value = "";
   };
 
